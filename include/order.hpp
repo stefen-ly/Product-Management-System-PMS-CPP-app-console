@@ -14,5 +14,6 @@ public:
     double total;
     
     Order(std::string id, std::string c);
+
 };
 

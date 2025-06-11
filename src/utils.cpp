@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <regex>
 #include <iostream>  
+#include <sstream>
 
 using namespace std;
 
@@ -114,4 +115,117 @@ string inputExpireDate() {
         break; 
     }
     return expiration;
+}
+
+string inputNonEmptyString(const string& prompt) {
+    string input;
+    do {
+        cout << prompt;
+        getline(cin, input);
+        if (input.empty()) {
+            cout << " ‼️ Input cannot be empty! Please try again.\n";
+        } else if (input.length() < 3) {
+            cout << " ‼️ Input must be at least 3 characters long! Please try again.\n";
+        }
+    } while (input.empty() || input.length() < 3);
+    return input;
+}
+
+double inputNonNegativeDouble(const string& prompt) {
+    string input;
+    double value;
+
+    while (true) {
+        cout << prompt;
+        getline(cin, input);
+
+        if (input.empty()) {
+            cout << " ‼️ Price cannot be empty! Please enter a value.\n";
+            continue;
+        }
+
+        stringstream ss(input);
+        if ((ss >> value) && !(ss >> input)) {
+            if (value <= 0) {
+                cout << " ‼️ Price must be greater than 0.\n";
+            } else {
+                return value;
+            }
+        } else {
+            cout << " ‼️ Invalid input. Enter a valid positive number.\n";
+        }
+    }
+}
+
+double inputSellPrice(double basePrice) {
+    string input;
+    double value;
+
+    while (true) {
+        cout << " - Enter sell price (retail): ";
+        getline(cin, input);
+
+        if (input.empty()) {
+            cout << " ‼️ Sell price cannot be empty!\n";
+            continue;
+        }
+
+        stringstream ss(input);
+        if ((ss >> value) && !(ss >> input)) {
+            if (value <= 0) {
+                cout << " ‼️ Sell price must be greater than 0.\n";
+            } else if (value < basePrice) {
+                cout << " ‼️ Sell price cannot be less than base price (" << basePrice << ").\n";
+            } else {
+                return value;
+            }
+        } else {
+            cout << " ‼️ Invalid input. Please enter a valid number.\n";
+        }
+    }
+}
+
+int inputNonNegativeInt(const string& prompt) {
+    int value;
+    while (true) {
+        cout << prompt;
+        if (cin >> value && value >= 0) {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return value;
+        }
+        cout << " ‼️ Invalid input. Enter a non-negative integer.\n";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+}
+
+int inputPositiveInt(const string& prompt) {
+    string input;
+    int value;
+
+    while (true) {
+        cout << prompt;
+        getline(cin, input);
+
+        if (input.empty()) {
+            cout << " ‼️ Quantity cannot be empty!\n";
+            continue;
+        }
+
+        stringstream ss(input);
+        if ((ss >> value) && !(ss >> input)) {
+            if (value <= 0) {
+                cout << " ‼️ Quantity must be greater than 0.\n";
+            } else {
+                return value;
+            }
+        } else {
+            cout << " ‼️ Invalid input. Please enter a valid positive integer.\n";
+        }
+    }
+}
+
+string maskPassword(const string& password) {
+    if (password.length() <= 2) return password;
+    return string(password.length() - 2, '*') + password.substr(password.length() - 2);
 }

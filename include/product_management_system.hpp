@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 #include "user.hpp"
 #include "product.hpp"
 #include "category.hpp"
@@ -109,6 +110,8 @@ private:
     void viewCarts(Order& order);
     void updateCart(Order& order);
     void confirmCart(Order& order);
+
+    void displayOrderDetails(Order& order);
 
 public:
     ProductManagementSystem();
