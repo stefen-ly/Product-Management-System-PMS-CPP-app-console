@@ -71,7 +71,9 @@ void ProductManagementSystem::mainMenu() {
 
     while (true) {
         system("cls"); 
-        cout << "\n========== PRODUCT MANAGEMENT SYSTEM ==========\n";
+        cout << "+============================================+\n";
+        cout << "|          PRODUCT MANAGEMENT SYSTEM         |\n";
+        cout << "+============================================+\n";
 
         for (int i = 0; i < options; ++i) {
             if (i == selected)
@@ -110,17 +112,17 @@ bool ProductManagementSystem::login(const string& role) {
     int attempts = 3;
 
     while (attempts > 0) {
-        cout << "\n\n============================================"<<endl;
+        cout << "\n\n+==========================================+"<<endl;
         cout << "|                   LOGIN                  |" <<endl;
-        cout << "============================================"<<endl;
+        cout << "+==========================================+"<<endl;
         username = getHiddenInput(" - Enter Username: ");
         password = getHiddenInput(" - Enter Password: ");
-        cout << "============================================"<<endl;
+        cout << "+==========================================+"<<endl;
 
         for (auto& user : users) {
             if (user.username == username && user.password == password && user.role == role) {
                 currentUser = &user;
-                cout << " ✅  Login successful!\n";
+                cout << "  ✅  Login successful!\n";
                 return true;
             }
         }
@@ -148,9 +150,9 @@ void ProductManagementSystem::adminDashboard() {
 
     while (true) {
         system("cls");
-        cout << "\n\n===========================================\n";
+        cout << "\n\n+=========================================+\n";
         cout << "|              ADMIN DASHBOARD            |\n";
-        cout << "===========================================\n";
+        cout << "+=========================================+\n";
         
         for (int i = 0; i < options; ++i) {
             if (i == selected)
@@ -159,7 +161,7 @@ void ProductManagementSystem::adminDashboard() {
                 cout << "   " << menu[i] << "\n";
         }
 
-        cout << "===========================================\n";
+        cout << "+=========================================+\n";
         cout << "↕️   Use arrow to navigate.";
 
         int ch = _getch();
@@ -201,16 +203,16 @@ void ProductManagementSystem::staffmanagProducts(){
 
     while (true) {
         system("cls");
-        cout << "\n\n========================================\n";
+        cout << "\n\n+======================================+\n";
         cout << "|            PRODUCT MANAGEMENT        |\n";
-        cout << "========================================\n";
+        cout << "+======================================+\n";
         for (int i = 0; i < options; ++i) {
             if (i == selected)
                 cout << "👉 " << menu[i] << "\n";
             else
                 cout << "   " << menu[i] << "\n";
         }
-        cout << "========================================\n";
+        cout << "+======================================+\n";
         cout << "↕️  Use arrow to navigate.";
 
         int ch = _getch();
@@ -241,24 +243,24 @@ void ProductManagementSystem::staffDashboard() {
     int selected = 0;
     const int options = 4;
     string menu[] = {
-        "1️⃣    Product Management",
-        "2️⃣    Place an Order for the Customer",
-        "3️⃣    View Orders Placed",
-        "🅾️    Logout"
+        "1️⃣   Product Management",
+        "2️⃣   Place an Order for the Customer",
+        "3️⃣   View Orders Placed",
+        "🅾️   Logout"
     };
 
     while (true) {
         system("cls");
-        cout << "\n\n===========================================\n";
+        cout << "\n\n+=========================================+\n";
         cout << "|               STAFF DASHBOARD           |\n";
-        cout << "===========================================\n";
+        cout << "+=========================================+\n";
         for (int i = 0; i < options; ++i) {
             if (i == selected)
                 cout << "👉 " << menu[i] << "\n";
             else
                 cout << "   " << menu[i] << "\n";
         }
-        cout << "===========================================\n";
+        cout << "+=========================================+\n";
         cout << "↕️   Use arrow to navigate.";
 
         int ch = _getch();
@@ -640,9 +642,10 @@ bool ProductManagementSystem::isExpired(const Product& product) {
 
 void ProductManagementSystem::addUser() {
     system("cls");
-    cout << "\n============================================" << endl;
-    cout << "|                  Add User                |" << endl;
-    cout << "============================================" << endl;
+    cout << endl;
+    cout << "+-------------------------------------+" << endl;
+    cout << "|               Add User              |" << endl;
+    cout << "+-------------------------------------+\n";
 
     while (true) {
         string username, password, role;
@@ -694,9 +697,9 @@ void ProductManagementSystem::addUser() {
 }
 void ProductManagementSystem::updateUser() {
     system("cls");
-    cout << "\n============================================" << endl;
-    cout << "|               Update User                |" << endl;
-    cout << "============================================" << endl;
+    cout << "+-------------------------------------+" << endl;
+    cout << "|             Update User             |" << endl;
+    cout << "+-------------------------------------+\n";
     if (users.empty()) {
         cout << "   ❌  No users available to update!\n";
         presskeyEnter();
@@ -761,12 +764,12 @@ void ProductManagementSystem::updateUser() {
         }
     }
 }
-
 void ProductManagementSystem::deleteUser() {
     system("cls");
-    cout << "\n============================================" << endl;
-    cout << "|                Delete User               |" << endl;
-    cout << "============================================" << endl;
+    cout << endl;
+    cout << "+-------------------------------------+" << endl;
+    cout << "|             Delete User             |" << endl;
+    cout << "+-------------------------------------+\n";
     if (users.empty()) {
         cout << "   ❌  No users available to delete!\n";
         presskeyEnter();
@@ -801,32 +804,66 @@ void ProductManagementSystem::deleteUser() {
         }
     }
 }
+
+
 void ProductManagementSystem::viewAllUsers() {
     if (users.empty()) {
         cout << " ❌ No users found!\n";
         return;
     }
 
-    cout << "+------------------------------------+" <<endl;
-    cout << "|           🧑‍💻  User List            |" <<endl;
-    cout << "+------------------------------------+" <<endl;
-    Table table;
-    table.add_row({"No", "Username", "Passwords", "Role"});
+    const int pageSize = 5;
+    int totalUsers = users.size();
+    int totalPages = (totalUsers + pageSize - 1) / pageSize;
+    int currentPage = 1;
 
-    int count = 1;
-    for (const auto& user : users) {
-        table.add_row({
-            to_string(count),
-            user.username,
-            user.password,
-            user.role
-        });
-        count++;
+    while (true) {
+#ifdef _WIN32
+        system("cls");
+#else
+        system("clear");
+#endif
+
+        cout << "\n";
+        cout << "+------------------------------------+" << endl;
+        cout << "|           🚹 User List             |" << endl;
+        cout << "+------------------------------------+" << endl;
+
+        Table table;
+        table.add_row({"No", "Username", "Passwords", "Role"});
+        table[0].format().font_style({FontStyle::bold});
+
+        int startIdx = (currentPage - 1) * pageSize;
+        int endIdx = min(startIdx + pageSize, totalUsers);
+        for (int i = startIdx; i < endIdx; ++i) {
+            string maskedPassword(users[i].password.length(), '*');
+            table.add_row({
+                to_string(i + 1),
+                users[i].username,
+                maskedPassword,
+                users[i].role
+            });
+        }
+
+        cout << table << endl;
+        cout << "📕  Page " << currentPage << " of " << totalPages << "\n";
+        cout << "[➡️  ] Next | [⬅️  ]Previous | [ESC] Quit\n";
+
+        int key = _getch();
+        if (key == 224) { 
+            key = _getch();
+            if (key == 75) { 
+                if (currentPage > 1) currentPage--;
+            } else if (key == 77) { 
+                if (currentPage < totalPages) currentPage++;
+            }
+        } else if (key == 27) { 
+            cout << "✅ Exiting user list view.\n";
+            break;
+        }
     }
-
-    table[0].format().font_style({FontStyle::bold});
-    cout << table << endl;
 }
+
 void ProductManagementSystem::manageUsers() {
     const int MENU_SIZE = 5;
     string options[MENU_SIZE] = {
@@ -840,7 +877,9 @@ void ProductManagementSystem::manageUsers() {
     int selected = 0;
     while (true) {
         system("cls"); 
-        cout << "\n=========== USER MANAGEMENT ===========\n";
+        cout << "\n+=====================================+\n";
+        cout << "|            USER MANAGEMENT          |\n";
+        cout << "+=====================================+\n";
         for (int i = 0; i < MENU_SIZE; ++i) {
             if (i == selected)
                 cout << " 👉 " << options[i] << endl;
@@ -878,9 +917,9 @@ void ProductManagementSystem::manageUsers() {
 
 void ProductManagementSystem::addCategory() {
     system("cls");
-    cout << "\n============================================" << endl;
-    cout << "|                Add Category              |" << endl;
-    cout << "============================================" << endl;
+    cout << "\n+-------------------------------------+" << endl;
+    cout << "|             Add Category            |" << endl;
+    cout << "+-------------------------------------+\n";
 
     while (true) {
         string name = inputNonEmptyString(" - Enter category name: ");
@@ -922,9 +961,9 @@ void ProductManagementSystem::addCategory() {
 
 void ProductManagementSystem::updateCategory() {
     system("cls");
-    cout << "\n============================================" << endl;
-    cout << "|              Update Category             |" << endl;
-    cout << "============================================" << endl;
+    cout << "\n+-------------------------------------+" << endl;
+    cout << "|           Update Category           |" << endl;
+    cout << "+-------------------------------------+\n";
     if (categories.empty()) {
         cout << " ❌  No categories available to update!\n";
         presskeyEnter();
@@ -1021,9 +1060,9 @@ void ProductManagementSystem::viewAllCategories(int pageSize) {
 
 void ProductManagementSystem::deleteCategory() {
     system("cls");
-    cout << "\n============================================" << endl;
-    cout << "|              Delete Category             |" << endl;
-    cout << "============================================" << endl;
+    cout << "\n+-------------------------------------+" << endl;
+    cout << "|           Delete Category           |" << endl;
+    cout << "+-------------------------------------+\n";
     if (categories.empty()) {
         cout << " ❌  No categories available to delete!\n";
         presskeyEnter();
@@ -1074,9 +1113,9 @@ void ProductManagementSystem::manageCategories() {
     int selected = 0;
     while (true) {
         system("cls");
-        cout << "\n\n===========================================\n";
+        cout << "\n\n+=========================================+\n";
         cout << "|            CATEGORY MANAGEMENT          |\n";
-        cout << "===========================================\n";
+        cout << "+=========================================+\n";
         for (int i = 0; i < MENU_SIZE; ++i) {
             if (i == selected)
                 cout << " 👉 " << options[i] << endl;
@@ -1166,9 +1205,9 @@ void ProductManagementSystem::manageProducts() {
 
 void ProductManagementSystem::addNewProduct() {
     system("cls");
-    cout << "\n\n============================================" << endl;
-    cout << "|                Add Product               |" << endl;
-    cout << "============================================" << endl;
+    cout << "\n+-------------------------------------+" << endl;
+    cout << "|             Add Product             |" << endl;
+    cout << "+-------------------------------------+\n";
 
     while (true) {
         if (categories.empty()) {
@@ -1177,11 +1216,11 @@ void ProductManagementSystem::addNewProduct() {
         }
 
         cout << " 📋  Available Categories:\n";
-        cout << "--------------------------------------------\n";
+        cout << "+-------------------------------------+\n";
         for (size_t i = 0; i < categories.size(); ++i) {
             cout << "  " << i + 1 << ". " << categories[i].name << " (UUID: " << categories[i].uuid << ")\n";
         }
-        cout << "--------------------------------------------\n";
+        cout << "+-------------------------------------+\n";
 
         int categoryIndex = -1;
         while (true) {
@@ -1258,7 +1297,7 @@ void ProductManagementSystem::viewAllProducts(int pageSize) {
     while (true) {
         system("cls"); 
         cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
-        cout << "|                                                     🛒 Product List                                                         |\n";
+        cout << "|                                                     🛒 Product List                                                          |\n";
         cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
 
         Table table;
@@ -1486,9 +1525,9 @@ void ProductManagementSystem::viewProduct() {
 
 void ProductManagementSystem::searchProductMenu() {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|              Search Product              |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
     int currentOption = 0;
     const int numOptions = 4;
     string options[] = {
@@ -1500,9 +1539,9 @@ void ProductManagementSystem::searchProductMenu() {
 
     while (true) {
         system("cls");
-        cout << "\n============================================" << endl;
+        cout << "\n+==========================================+" << endl;
         cout << "|              Search Product              |" << endl;
-        cout << "============================================" << endl;
+        cout << "+==========================================+" << endl;
 
         for (int i = 0; i < numOptions; ++i) {
             if (i == currentOption)
@@ -1524,9 +1563,9 @@ void ProductManagementSystem::searchProductMenu() {
             if (currentOption == 3) break;
 
             system("cls");
-            cout << "\n============================================" << endl;
+            cout << "\n+==========================================+" << endl;
             cout << "|              Search Product              |" << endl;
-            cout << "============================================" << endl;
+            cout << "+==========================================+" << endl;
             string query = inputNonEmptyString(" - Enter search query: ");
 
             string queryLower = query;
@@ -1599,9 +1638,9 @@ void ProductManagementSystem::searchProductMenu() {
 
 void ProductManagementSystem::updateProduct() {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|              Update Product              |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
 
     while (true) {
         string id = inputNonEmptyString(" - Enter product ID to update: ");
@@ -1742,9 +1781,9 @@ void ProductManagementSystem::updateProduct() {
             if (continueChoice == "y" || continueChoice == "Y") {
                 cout << "\n";
                 system("cls");
-                cout << "\n============================================" << endl;
+                cout << "\n+==========================================+" << endl;
                 cout << "|              Update Product              |" << endl;
-                cout << "============================================" << endl;
+                cout << "+==========================================+" << endl;
                 break; 
             } else if (continueChoice == "n" || continueChoice == "N") {
                 presskeyEnter();
@@ -1758,9 +1797,9 @@ void ProductManagementSystem::updateProduct() {
 
 void ProductManagementSystem::deleteProduct() {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|              Delete Product              |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
     if (currentUser->role != "Admin") {
         cout << " ‼️ Only admins can delete products!\n";
         presskeyEnter();
@@ -1820,7 +1859,9 @@ void ProductManagementSystem::viewHighStockProducts() {
 
     while (browsing) {
         system("cls");
-        cout << "\n========== HIGH STOCK PRODUCTS ===========\n";
+        cout << "+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
+        cout << "|                                                  💹 HIGHT STOCK PRODUCTS                                                  |\n";
+        cout << "+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
 
         Table table;
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
@@ -1970,7 +2011,9 @@ void ProductManagementSystem::sortProductsMenu() {
 
     while (true) {
         system("cls");
-        cout << "\n=========== SORT PRODUCTS ===========\n";
+        cout << "\n+===================================+\n";
+        cout << "|            SORT PRODUCTS          |\n";
+        cout << "+===================================+\n";
 
         string menu[] = {
             "1️⃣   By Name (A–Z)",
@@ -2074,6 +2117,7 @@ void ProductManagementSystem::sortProductsMenu() {
 
                 cout << table << "\n";
                 cout << "📕  Page " << (currentPage + 1) << " of " << totalPages << "\n";
+                cout << "----------------------------------------------------------------------------------------------------------------------------------" <<endl;
                 cout << "[⬅️  ] Prev Page  [➡️ ] Next Page  [ESC] Back";
 
                 int key = _getch();
@@ -2117,7 +2161,9 @@ void ProductManagementSystem::viewExpiredProducts() {
 
     while (choosing) {
         system("cls");
-        cout << "\n========== EXPIRED PRODUCTS (Page " << currentPage + 1 << " of " << totalPages << ") ==========\n";
+        cout << "\n+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
+        cout << "|                                                     EXPIRED PRODUCTS                                                       |\n";
+        cout << "+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
 
         Table table;
         table.add_row({"No", "ID", "Name", "Size", "Qty", "Created", "Expiry", "TotalPrice", "Status"});
@@ -2147,13 +2193,12 @@ void ProductManagementSystem::viewExpiredProducts() {
         table[0].format().font_style({FontStyle::bold});
         cout << table << endl;
         cout << "📕  Page " << (currentPage + 1) << " of " << totalPages << "\n";
-        cout << "===========================================\n";
         for (int i = 0; i < 3; ++i) {
             if (i == selected) cout << " 👉 ";
             else cout << "    ";
             cout << options[i] << endl;
         }
-        cout << "===========================================\n";
+        cout << "----------------------------------------------------------------------------------------------------------------------------\n";
         cout << "[⬅️ ] Previous | [➡️ ] Next | [↕️ ] Select | and Enter";
 
         int key = _getch();
@@ -2215,9 +2260,9 @@ void ProductManagementSystem::restockProduct() {
     while (true) {
         while (true) {
             system("cls");
-            cout << "\n============================================" << endl;
+            cout << "\n+==========================================+" << endl;
             cout << "|             Restock Products             |" << endl;
-            cout << "============================================" << endl;
+            cout << "+==========================================+" << endl;
             for (int i = 0; i < menuSize; ++i) {
                 if (i == selected)
                     cout << " 👉 ";
@@ -2278,7 +2323,9 @@ void ProductManagementSystem::placeOrder() {
 
     while (true) {
         system("cls");
-        cout << "\n========== 🛒 PLACE ORDER ==========\n";
+        cout << "\n+==================================+\n";
+        cout << "|         🛒 PLACE ORDER          |\n";
+        cout << "+==================================+\n";
         for (int i = 0; i < MENU_SIZE; ++i) {
             if (i == choice)
                 cout << "👉 " << options[i] << "\n";
@@ -2309,9 +2356,9 @@ void ProductManagementSystem::placeOrder() {
 
 void ProductManagementSystem::addtoCart(Order& order) {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|            Add Product to Cart            |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
 
     while (true) {
         cout << "🔍 Search & Select Product\n";
@@ -2359,9 +2406,9 @@ void ProductManagementSystem::addtoCart(Order& order) {
             selectedProduct = matches[0];
         } else {
             system("cls");
-            cout << "\n============================================" << endl;
+            cout << "\n+==========================================+" << endl;
             cout << "|         Multiple Products Found           |" << endl;
-            cout << "============================================" << endl;
+            cout << "+==========================================+" << endl;
             cout << "Multiple products match '" << query << "'. Please select one:\n\n";
 
             Table table;
@@ -2435,9 +2482,9 @@ void ProductManagementSystem::addtoCart(Order& order) {
             if (continueChoice == "y" || continueChoice == "Y") {
                 cout << "\n";
                 system("cls");
-                cout << "\n============================================" << endl;
+                cout << "\n+==========================================+" << endl;
                 cout << "|            Add Product to Cart            |" << endl;
-                cout << "============================================" << endl;
+                cout << "+==========================================+" << endl;
                 break; 
             } else if (continueChoice == "n" || continueChoice == "N") {
                 return; 
@@ -2454,9 +2501,9 @@ void ProductManagementSystem::addtoCart(Order& order) {
         if (continueChoice == "y" || continueChoice == "Y") {
             cout << "\n";
             system("cls");
-            cout << "\n============================================" << endl;
+            cout << "\n+==========================================+" << endl;
             cout << "|            Add Product to Cart            |" << endl;
-            cout << "============================================" << endl;
+            cout << "+==========================================+" << endl;
             continue; 
         } else if (continueChoice == "n" || continueChoice == "N") {
             return; 
@@ -2468,9 +2515,9 @@ void ProductManagementSystem::addtoCart(Order& order) {
 
 void ProductManagementSystem::viewCarts(Order& order) {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|              Cart Summary                |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
 
     if (order.products.empty()) {
         cout << " ❌ Cart is empty!\n";
@@ -2704,9 +2751,9 @@ void ProductManagementSystem::updateCart(Order& order) {
 
 void ProductManagementSystem::confirmCart(Order& order) {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|              Confirm Cart                |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
 
     if (order.products.empty()) {
         cout << " ❌ Cart is empty! Add products first.\n";
@@ -2779,35 +2826,35 @@ void ProductManagementSystem::confirmCart(Order& order) {
         saveOrders();
 
         // Print receipt to console
-        cout << "\n========================================================================" << endl;
+        cout << "\n+======================================================================+" << endl;
         cout << "|                                Receipt                               |" << endl;
-        cout << "========================================================================" << endl;
+        cout << "+======================================================================+" << endl;
         cout << "🛒 Order ID: " << order.orderId << "\n";
         cout << "👤 Customer: " << order.customerName << "\n";
         cout << "🕰️ Time: " << order.dateTime << "\n";
         cout << "📋 Products:\n";
         cout << table << endl;
         cout << "💰 Total: $" << fixed << setprecision(2) << order.total << "\n";
-        cout << " ========================================================================" << endl;
-        cout << " ✅ Thank you for your purchase!\n";
-        cout << "========================================================================" << endl;
+        cout << "+======================================================================+" << endl;
+        cout << "| ✅ Thank you for your purchase!\n"; 
+        cout << "+======================================================================+" << endl;
 
         // Save receipt to file
         string filename = "receipt_" + order.orderId + ".txt";
         ofstream outFile(filename);
         if (outFile.is_open()) {
-            outFile << "========================================================================\n";
+            outFile << "+======================================================================+\n";
             outFile << "|                                 Receipt                              |\n";
-            outFile << "========================================================================\n";
+            outFile << "+======================================================================+\n";
             outFile << "Order ID: " << order.orderId << "\n";
             outFile << "Customer: " << order.customerName << "\n";
             outFile << "Time: " << order.dateTime << "\n";
             outFile << "Products:\n";
             outFile << table << "\n";
             outFile << "Total: $" << fixed << setprecision(2) << order.total << "\n";
-            outFile << "========================================================================\n";
+            outFile << "+======================================================================+\n";
             outFile << "Thank you for your purchase!\n";
-            outFile << "========================================================================\n";
+            outFile << "+======================================================================+\n";
             outFile.close();
             cout << " 📄 Receipt saved to " << filename << "\n";
             cout << " 🗑️ Receipt will be deleted in 2 minutes.\n";
@@ -2879,96 +2926,6 @@ void ProductManagementSystem::displayOrderDetails(Order& order) {
 
     system("cls");
 }
-// void ProductManagementSystem::viewStaffOrders() {
-//     if (orders.empty()) {
-//         cout << "\n  ‼️ No orders have been placed yet.\n";
-//         presskeyEnter();
-//         return;
-//     }
-
-//     vector<Order> sortedOrders = orders;
-//     sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
-//         return a.total > b.total;
-//     });
-
-//     const int pageSize = 5;
-//     int totalPages = (sortedOrders.size() + pageSize - 1) / pageSize;
-//     int currentPage = 1;
-
-//     while (true) {
-//         system("cls");
-//         cout << "\n============ STAFF ORDERS (Page " << currentPage << " of " << totalPages << ") ============\n";
-
-//         Table table;
-//         table.add_row({"No", "Order ID", "Customer Name", "Total ($)", "Date"});
-//         table[0].format().font_style({FontStyle::bold});
-
-//         size_t start = (currentPage - 1) * pageSize;
-//         size_t end = min(start + pageSize, sortedOrders.size());
-
-//         for (size_t i = start; i < end; ++i) {
-//             const auto& order = sortedOrders[i];
-
-//             ostringstream totalStream;
-//             totalStream << fixed << setprecision(2) << order.total;
-
-//             table.add_row({
-//                 to_string(i + 1),
-//                 order.orderId,
-//                 order.customerName,
-//                 totalStream.str(),
-//                 order.dateTime.empty() ? "N/A" : order.dateTime
-//             });
-//         }
-
-//         table.format().font_align(FontAlign::center).padding_left(1).padding_right(1);
-//         cout << table << endl;
-//         cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
-//         cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
-//         cout << " - Enter No or Order ID to view details : ";
-
-//         string input;
-//         getline(cin, input);
-
-//         if (!input.empty()) {
-//             try {
-//                 size_t orderIndex = stoul(input) - 1; 
-//                 if (orderIndex < sortedOrders.size()) {
-//                     displayOrderDetails(sortedOrders[orderIndex]);
-//                     continue;
-//                 } else {
-//                     cout << " ‼️ Invalid order number! Please try again.\n";
-//                     presskeyEnter();
-//                     continue;
-//                 }
-//             } catch (const invalid_argument&) {
-//                 auto it = find_if(sortedOrders.begin(), sortedOrders.end(),
-//                     [&input](const Order& order) { return order.orderId == input; });
-//                 if (it != sortedOrders.end()) {
-//                     displayOrderDetails(*it);
-//                     continue; 
-//                 } else {
-//                     cout << " ‼️ Order ID not found! Please try again.\n";
-//                     presskeyEnter();
-//                     continue;
-//                 }
-//             }
-//         }
-
-//         int ch = _getch();
-//         if (ch == 27) { 
-//             break;
-//         } else if (ch == 0 || ch == 224) {
-//             int arrow = _getch();
-//             if (arrow == 75 && currentPage > 1) { 
-//                 currentPage--;
-//             } else if (arrow == 77 && currentPage < totalPages) { 
-//                 currentPage++;
-//             }
-//         }
-//     }
-// }
-
 
 void ProductManagementSystem::displayOrderTable(const vector<Order>& orders, int currentPage, const string& title) {
     const int pageSize = 5;
@@ -3033,7 +2990,9 @@ void ProductManagementSystem::viewStaffOrders() {
 
     while (true) {
         system("cls");
-        cout << "\n============== STAFF ORDER MENU ==============\n";
+        cout << "\n+============================================+\n";
+        cout << "|              STAFF ORDER MENU              |\n";
+        cout << "+============================================+\n";
         for (size_t i = 0; i < menuOptions.size(); ++i) {
             cout << (i == selectedOption ? "👉 " : "   ") << " " << menuOptions[i] << "\n";
         }
@@ -3052,8 +3011,10 @@ void ProductManagementSystem::viewStaffOrders() {
             switch (selectedOption) {
                 case 0: { 
                     system("cls");
-
-                    cout << "\n============ ORDER INVENTORY SUMMARY (" << today << ") =============\n";
+                    cout << "+=================================================+" <<endl;
+                    cout << "|             ORDER INVENTORY SUMMARY             |" <<endl;
+                    cout << "+=================================================+" <<endl;
+                    cout << " Date: " << today << "\n";
 
                     map<string, pair<int, double>> inventory; 
                     map<string, double> profitMap; 
@@ -3132,7 +3093,9 @@ void ProductManagementSystem::viewStaffOrders() {
                 }
                 case 2: { 
                     system("cls");
-                    cout << "\n============ VIEW ORDERS BY DAY =============\n";
+                    cout << "+=================================================+" <<endl;
+                    cout << "|                VIEW ORDERS BY DAY               |\n";
+                    cout << "+=================================================+" <<endl;
                     cout << " - Enter date (DD MM YYYY): ";
                     string dateInput;
                     getline(cin, dateInput);
@@ -3242,7 +3205,9 @@ void ProductManagementSystem::generateReport() {
 
     while (true) {
         system("cls");  
-        cout << "\n============= REPORT DASHBOARD =============\n";
+        cout << "+=================================================+" <<endl;
+        cout << "|                 REPORT DASHBOARD                |\n";
+        cout << "+=================================================+" <<endl;
 
         for (int i = 0; i < optionCount; ++i) {
             if (i == selected){
@@ -3252,7 +3217,7 @@ void ProductManagementSystem::generateReport() {
             }
         }
 
-        cout << "===========================================\n";
+        cout << "+=================================================+" <<endl;
         cout << "↕️  Use arrow keys to navigate.";
 
         int key = _getch();
@@ -3358,14 +3323,16 @@ void ProductManagementSystem::exportProductReport() {
 
     while (true) {
         system("cls");
-        cout << "\n========== EXPORT PRODUCT REPORT ==========\n";
+        cout << "+=================================================+" <<endl;
+        cout << "|               EXPORT PRODUCT REPORT             |\n";
+        cout << "+=================================================+" <<endl;
         for (int i = 0; i < MENU_SIZE; ++i) {
             if (i == selected)
                 cout << " 👉 " << options[i] << endl;
             else
                 cout << "    " << options[i] << endl;
         }
-        cout << "===========================================\n";
+        cout << "+=================================================+" <<endl;
         cout << "↕️  Use arrows to navigate, ENTER to select.";
 
         int ch = _getch();
@@ -3507,7 +3474,9 @@ void ProductManagementSystem::generateInventorySummary() {
             highestPriced = &product;
     }
 
-    cout << "\n=============== INVENTORY SUMMARY =================\n";
+    cout << "+====================================================+" <<endl;
+    cout << "|                 INVENTORY SUMMARY                  |\n";
+    cout << "+====================================================+" <<endl;
     cout << "- Date.............................: " << dateStr << endl;
     cout << "- Total Categories.................: " << categories.size() << endl;
     cout << "- Total Products...................: " << products.size() << endl;
@@ -3522,7 +3491,7 @@ void ProductManagementSystem::generateInventorySummary() {
          << (highStockItems.empty() ? "None" : "") << endl;
     for (const auto& item : highStockItems)
         cout << "  • " << item << endl;
-    cout << "===================================================\n";
+    cout << "+====================================================+" <<endl;
 
     cout << "▶️  Press [S] to save inventory or press Enter to return: ";
     string input;
@@ -3531,7 +3500,9 @@ void ProductManagementSystem::generateInventorySummary() {
     if (input == "S" || input == "s") {
         ofstream outFile("inventory_summary.txt");
         if (outFile.is_open()) {
-            outFile << "=============== INVENTORY SUMMARY =================\n";
+            cout << "+====================================================+" <<endl;
+            cout << "|                 INVENTORY SUMMARY                  |\n";
+            cout << "+====================================================+" <<endl;
             outFile << "- Date.............................: " << dateStr << "\n";
             outFile << "- Total Categories.................: " << categories.size() << "\n";
             outFile << "- Total Products...................: " << products.size() << "\n";
@@ -3546,7 +3517,7 @@ void ProductManagementSystem::generateInventorySummary() {
                     << (highStockItems.empty() ? "None" : "") << "\n";
             for (const auto& item : highStockItems)
                 outFile << "  • " << item << "\n";
-            outFile << "===================================================\n";
+            outFile << "+====================================================+\n";
             outFile.close();
             cout << " ✅  Summary saved to 'inventory_summary.txt'\n";
         } else {
@@ -3560,10 +3531,10 @@ void ProductManagementSystem::generateInventorySummary() {
 }
 
 void ProductManagementSystem::showUnavailableProducts() {
-    system("cls");
-    cout << "\n============================================" << endl;
-    cout << "|          Unavailable Products            |" << endl;
-    cout << "============================================" << endl;
+    system("cls");   
+    cout << "\n+------------------------------------------------------------+" << endl;
+    cout << "|                     Unavailable Products                   |" << endl;
+    cout << "+------------------------------------------------------------+" << endl;
 
     Table table;
     table.add_row({"No", "ID", "Name", "Size", "Category", "Qty", "Status"});
@@ -3625,9 +3596,9 @@ void ProductManagementSystem::showUnavailableProducts() {
 
 void ProductManagementSystem::restockProductById() {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|             Restock Product              |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
 
     string id = inputNonEmptyString(" - Enter product ID to restock: ");
 
@@ -3670,9 +3641,9 @@ void ProductManagementSystem::restockProductById() {
 
 void ProductManagementSystem::showRestockLogs(int pageSize) {
     system("cls");
-    cout << "\n============================================" << endl;
+    cout << "\n+==========================================+" << endl;
     cout << "|             Restock Log                 |" << endl;
-    cout << "============================================" << endl;
+    cout << "+==========================================+" << endl;
 
     if (restockLogs.empty()) {
         cout << " ❌ No restock logs!\n";
@@ -3686,9 +3657,9 @@ void ProductManagementSystem::showRestockLogs(int pageSize) {
 
     while (true) {
         system("cls");
-        cout << "\n============================================" << endl;
+        cout << "\n+==========================================+" << endl;
         cout << "|             Restock Log                 |" << endl;
-        cout << "============================================" << endl;
+        cout << "+==========================================+" << endl;
 
         Table table;
         table.add_row({"ProductID", "ProductName", "QtyRestocked", "RestockDate"});
