@@ -9,6 +9,7 @@ public:
     std::string categoryUuid;
     double basePrice;
     double sellPrice;
+    double costPrice;
     int quantity;
     std::string expirationDate;
     std::string creationDate;
@@ -16,6 +17,6 @@ public:
     std::string status;
     std::string size;
     
-    Product(std::string id, std::string n, std::string c, double bp, double sp, 
+    Product(std::string id, std::string n, std::string c, double bp, double cp,
             int q, std::string e, std::string cd, double tp, std::string s, std::string sz);
 };

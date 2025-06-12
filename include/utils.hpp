@@ -14,3 +14,6 @@ int inputNonNegativeInt(const std::string& prompt);
 double inputSellPrice(double basePrice);
 int inputPositiveInt(const std::string& prompt);
 std::string maskPassword(const std::string& password) ;
+std::string inputOptionalString(const std::string& prompt, int minLength = 3);
+std::string toLower(const std::string& str);
+

@@ -52,7 +52,7 @@ string getCurrentDate() {
     return day + "-" + month + "-" + year;
 }
 
-bool isValidDateFormat(const std::string& date) {
+bool isValidDateFormat(const string& date) {
     std::regex datePattern(R"(^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$)");
     return std::regex_match(date, datePattern);
 }
@@ -90,7 +90,7 @@ bool isDateAfterToday(int day, int month, int year) {
 string inputExpireDate() {
     string expiration;
     while (true) {
-        cout << "Enter expiration date (DD-MM-YYYY): ";
+        cout << " - Enter expiration date (DD-MM-YYYY): ";
         getline(cin, expiration);
 
         if (!isValidDateFormat(expiration)) {
@@ -128,6 +128,20 @@ string inputNonEmptyString(const string& prompt) {
             cout << " ‼️ Input must be at least 3 characters long! Please try again.\n";
         }
     } while (input.empty() || input.length() < 3);
+    return input;
+}
+
+string inputOptionalString(const string& prompt, int minLength) {
+    string input;
+    cout << prompt;
+    getline(cin, input);
+    if (!input.empty() && input.length() < minLength) {
+        while (true) {
+            cout << " ‼️ Input must be at least " << minLength << " characters long or press Enter to skip: ";
+            getline(cin, input);
+            if (input.empty() || input.length() >= minLength) break;
+        }
+    }
     return input;
 }
 
@@ -174,8 +188,8 @@ double inputSellPrice(double basePrice) {
         if ((ss >> value) && !(ss >> input)) {
             if (value <= 0) {
                 cout << " ‼️ Sell price must be greater than 0.\n";
-            } else if (value < basePrice) {
-                cout << " ‼️ Sell price cannot be less than base price (" << basePrice << ").\n";
+            } else if (value <= basePrice) {
+                cout << " ‼️ Sell price must be greater than base price (" << basePrice << ").\n";
             } else {
                 return value;
             }
@@ -228,4 +242,10 @@ int inputPositiveInt(const string& prompt) {
 string maskPassword(const string& password) {
     if (password.length() <= 2) return password;
     return string(password.length() - 2, '*') + password.substr(password.length() - 2);
+}
+
+string toLower(const string& str) {
+    string result = str;
+    transform(result.begin(), result.end(), result.begin(), ::tolower);
+    return result;
 }

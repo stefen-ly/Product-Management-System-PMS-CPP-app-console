@@ -12,6 +12,9 @@
 #include <windows.h> 
 #include <ctime>
 #include <unordered_map>
+#include <thread>
+#include <chrono>
+#include <filesystem>
 
 #ifdef _WIN32
 #define CLEAR_SCREEN "cls"
@@ -880,6 +883,19 @@ void ProductManagementSystem::addCategory() {
     while (true) {
         string name = inputNonEmptyString(" - Enter category name: ");
 
+        bool duplicate = false;
+        for (const auto& category : categories) {
+            if (toLower(category.name) == toLower(name)) {
+                duplicate = true;
+                break;
+            }
+        }
+
+        if (duplicate) {
+            cout << " ‼️ Category with the name " << name << "\n   already exists! Please enter a different name.\n";
+            continue;
+        }
+
         string uuid = generateCategoryUuid();
         categories.emplace_back(uuid, name);
         saveCategories();
@@ -890,11 +906,11 @@ void ProductManagementSystem::addCategory() {
             cout << " - Add another category? (y/n): ";
             getline(cin, continueChoice);
             if (continueChoice == "y" || continueChoice == "Y") {
-                cout << "\n"; 
-                break; 
+                cout << "\n";
+                break;
             } else if (continueChoice == "n" || continueChoice == "N") {
                 presskeyEnter();
-                return; 
+                return;
             } else {
                 cout << " ‼️ Invalid input! Please enter 'y' or 'n'.\n";
             }
@@ -949,28 +965,54 @@ void ProductManagementSystem::updateCategory() {
     }
 }
 
-void ProductManagementSystem::viewAllCategories() {
+void ProductManagementSystem::viewAllCategories(int pageSize) {
     if (categories.empty()) {
         cout << "‼️ No categories found!\n";
         return;
     }
-    
-    cout << "📋 Category Lists..." <<endl;
-    Table table;
-    table.add_row({"No", "UUID", "Name"});
 
-    int count = 1;
-    for (const auto& category : categories) {
-        table.add_row({
-            to_string(count),
-            category.uuid,
-            category.name
-        });
-        count++;
+    int totalCategories = categories.size();
+    int totalPages = (totalCategories + pageSize - 1) / pageSize;
+    int currentPage = 1;
+
+    while (true) {
+        system("cls");
+
+        cout << "📋 Category List...\n";
+
+        Table table;
+        table.add_row({"No", "UUID", "Name"});
+        table[0].format().font_style({FontStyle::bold});
+
+        int startIdx = (currentPage - 1) * pageSize;
+        int endIdx = std::min(startIdx + pageSize, totalCategories);
+
+        for (int i = startIdx; i < endIdx; ++i) {
+            const auto& category = categories[i];
+            table.add_row({
+                to_string(i + 1),
+                category.uuid,
+                category.name
+            });
+        }
+
+        cout << table << endl;
+        cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
+        cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
+
+        int ch = _getch();
+
+        if (ch == 27) { 
+            break;
+        } else if (ch == 0 || ch == 224) {
+            int arrow = _getch();
+            if (arrow == 75) { 
+                if (currentPage > 1) currentPage--;
+            } else if (arrow == 77) { 
+                if (currentPage < totalPages) currentPage++;
+            }
+        }
     }
-
-    table[0].format().font_style({FontStyle::bold});
-    cout << table << endl;
 }
 
 void ProductManagementSystem::deleteCategory() {
@@ -1119,6 +1161,7 @@ void ProductManagementSystem::manageProducts() {
 }
 
 void ProductManagementSystem::addNewProduct() {
+    system("cls");
     cout << "\n\n============================================" << endl;
     cout << "|                Add Product               |" << endl;
     cout << "============================================" << endl;
@@ -1210,7 +1253,7 @@ void ProductManagementSystem::viewAllProducts(int pageSize) {
 
     while (true) {
         system("cls"); 
-        cout << " 🛒 Product List (Page " << currentPage + 1 << " of " << totalPages << ") \n";
+        cout << " 🛒 Product List \n";
 
         Table table;
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
@@ -1248,8 +1291,8 @@ void ProductManagementSystem::viewAllProducts(int pageSize) {
 
         table[0].format().font_style({FontStyle::bold});
         cout << table << endl;
-        cout << "📕 Page " << (currentPage + 1) << " of " << totalPages << "\n";
-        cout << "[⬅️  ] Prev Page [➡️  ] Next Page [ESC] Back\n";
+        cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
+        cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
 
         int key = _getch();
         if (key == 224) { 
@@ -1318,8 +1361,7 @@ void ProductManagementSystem::productByCategory() {
 
     while (true) {
         system("cls");
-        cout << " 🛒 Products in Category: " << selectedCategoryName 
-             << " (📕 Page " << currentPage + 1 << " of " << totalPages << ")\n";
+        cout << " 🛒 Products in Category: " << selectedCategoryName <<"\n";
 
         Table table;
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
@@ -1357,8 +1399,8 @@ void ProductManagementSystem::productByCategory() {
         table[0].format().font_style({FontStyle::bold});
         cout << table << endl;
 
-        cout << "📕 Page " << (currentPage + 1) << " of " << totalPages << "\n";
-        cout << "[⬅️  ] Prev Page [➡️  ] Next Page [ESC] Back\n";
+        cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
+        cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
 
         int key = _getch();
         if (key == 224) {
@@ -1562,15 +1604,17 @@ void ProductManagementSystem::updateProduct() {
                 double basePrice = product.basePrice, sellPrice = product.sellPrice;
                 int quantity = product.quantity;
 
-                name = inputNonEmptyString(" - Enter new name (current: " + product.name + ", press Enter to keep): ");
-                if (!name.empty()) product.name = name;
+                name = inputOptionalString(" - Enter new name (" + product.name + "): ");
+                if (!name.empty()) {
+                    product.name = name;
+                }
 
-                cout << " - Enter new category UUID (current: " << product.categoryUuid << ", press Enter to keep): ";
+                cout << " - Enter new category UUID (" << product.categoryUuid << "): ";
                 getline(cin, categoryUuid);
                 if (!categoryUuid.empty()) {
                     while (categoryUuid.length() < 3) {
                         cout << " ‼️ Category UUID must be at least 3 characters long! Please try again.\n";
-                        cout << " - Enter new category UUID (current: " << product.categoryUuid << ", press Enter to keep): ";
+                        cout << " - Enter new category UUID (" << product.categoryUuid << "): ";
                         getline(cin, categoryUuid);
                         if (categoryUuid.empty()) break;
                     }
@@ -1590,7 +1634,7 @@ void ProductManagementSystem::updateProduct() {
                 }
 
                 while (true) {
-                    cout << " - Enter new base price (current: " << fixed << setprecision(2) << product.basePrice << ", press Enter to keep): ";
+                    cout << " - Enter new base price (" << fixed << setprecision(2) << product.basePrice << "): ";
                     getline(cin, input);
                     if (input.empty()) break;
                     try {
@@ -1606,7 +1650,7 @@ void ProductManagementSystem::updateProduct() {
                 }
 
                 while (true) {
-                    cout << " - Enter new sell price (current: " << fixed << setprecision(2) << product.sellPrice << ", press Enter to keep): ";
+                    cout << " - Enter new sell price (" << fixed << setprecision(2) << product.sellPrice << "): ";
                     getline(cin, input);
                     if (input.empty()) break;
                     try {
@@ -1629,7 +1673,7 @@ void ProductManagementSystem::updateProduct() {
                 product.sellPrice = sellPrice;
 
                 while (true) {
-                    cout << " - Enter new quantity (current: " << product.quantity << ", press Enter to keep): ";
+                    cout << " - Enter new quantity (" << product.quantity << "): ";
                     getline(cin, input);
                     if (input.empty()) break;
                     try {
@@ -1647,24 +1691,24 @@ void ProductManagementSystem::updateProduct() {
                     }
                 }
 
-                cout << " - Enter new expiration date (current: " << product.expirationDate << ", press Enter to keep): ";
+                cout << " - Enter new expiration date (" << product.expirationDate << "): ";
                 getline(cin, expiration);
                 if (!expiration.empty()) {
                     while (expiration.length() < 3) {
                         cout << " ‼️ Expiration date must be at least 3 characters long! Please try again.\n";
-                        cout << " - Enter new expiration date (current: " << product.expirationDate << ", press Enter to keep): ";
+                        cout << " - Enter new expiration date (" << product.expirationDate << "): ";
                         getline(cin, expiration);
                         if (expiration.empty()) break;
                     }
                     if (!expiration.empty()) product.expirationDate = expiration;
                 }
 
-                cout << " - Enter new size (current: " << (product.size.empty() ? "N/A" : product.size) << ", press Enter to keep): ";
+                cout << " - Enter new size (" << (product.size.empty() ? "N/A" : product.size) << "): ";
                 getline(cin, size);
                 if (!size.empty()) {
                     while (size.length() < 3) {
                         cout << " ‼️ Size must be at least 3 characters long! Please try again.\n";
-                        cout << " - Enter new size (current: " << (product.size.empty() ? "N/A" : product.size) << ", press Enter to keep): ";
+                        cout << " - Enter new size (" << (product.size.empty() ? "N/A" : product.size) << "): ";
                         getline(cin, size);
                         if (size.empty()) break;
                     }
@@ -1735,13 +1779,15 @@ void ProductManagementSystem::deleteProduct() {
                 cout << "\n"; 
                 break; 
             } else if (continueChoice == "n" || continueChoice == "N") {
-                presskeyEnter();
+                //presskeyEnter();
                 return; 
             } else {
                 cout << " ‼️ Invalid input! Please enter 'y' or 'n'.\n";
             }
         }
     }
+    presskeyEnter();
+    
 }
 
 void ProductManagementSystem::viewHighStockProducts() {
@@ -1764,7 +1810,7 @@ void ProductManagementSystem::viewHighStockProducts() {
 
     while (browsing) {
         system("cls");
-        cout << "\n========== HIGH STOCK PRODUCTS (Page " << currentPage + 1 << " of " << totalPages << ") ==========\n";
+        cout << "\n========== HIGH STOCK PRODUCTS ===========\n";
 
         Table table;
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
@@ -1808,7 +1854,8 @@ void ProductManagementSystem::viewHighStockProducts() {
 
         table[0].format().font_style({FontStyle::bold});
         cout << table << endl;
-        cout << "[⬅️  ] Previous | [➡️  ] Next | [ESC] Back";
+        cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
+        cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
 
         int key = _getch();
         if (key == 224) {
@@ -1844,7 +1891,7 @@ void ProductManagementSystem::viewLowStockProducts() {
 
     while (browsing) {
         system("cls");
-        cout << "\n========== LOW STOCK PRODUCTS (Page " << currentPage + 1 << " of " << totalPages << ") ==========\n";
+        cout << "\n========== LOW STOCK PRODUCTS ==========\n";
 
         Table table;
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
@@ -1888,7 +1935,8 @@ void ProductManagementSystem::viewLowStockProducts() {
 
         table[0].format().font_style({FontStyle::bold});
         cout << table << endl;
-        cout << "[⬅️  ] Previous | [➡️  ] Next | [ESC] Back\n";
+        cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
+        cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
 
         int key = _getch();
         if (key == 224) {
@@ -2092,7 +2140,7 @@ void ProductManagementSystem::viewExpiredProducts() {
             cout << options[i] << endl;
         }
         cout << "===========================================\n";
-        cout << "[⬅️  ] Previous | [➡️  ] Next | [↕️  ] Select | and Enter";
+        cout << "[⬅️ ] Previous | [➡️ ] Next | [↕️ ] Select | and Enter";
 
         int key = _getch();
         if (key == 224) {
@@ -2177,230 +2225,18 @@ void ProductManagementSystem::restockProduct() {
         }
 
         switch (selected) {
-            case 0: { // View Unavailable Products
-                system("cls");
-                cout << "\n============================================" << endl;
-                cout << "|          Unavailable Products            |" << endl;
-                cout << "============================================" << endl;
-
-                Table table;
-                table.add_row({"No", "ID", "Name", "Size", "Category", "Qty", "Status"});
-                table[0].format().font_style({FontStyle::bold});
-
-                int count = 1;
-                bool hasUnavailable = false;
-                for (const auto& product : products) {
-                    if (product.quantity == 0) {
-                        hasUnavailable = true;
-                        string categoryName = "Unknown";
-                        string displaySize = product.size.empty() ? "N/A" : product.size;
-
-                        for (const auto& category : categories) {
-                            if (category.uuid == product.categoryUuid) {
-                                categoryName = category.name;
-                                break;
-                            }
-                        }
-
-                        table.add_row({
-                            to_string(count++),
-                            product.id,
-                            product.name,
-                            displaySize,
-                            categoryName,
-                            to_string(product.quantity),
-                            product.status
-                        });
-                    }
-                }
-
-                if (!hasUnavailable) {
-                    cout << " ❌ No unavailable products!\n";
-                    presskeyEnter();
-                    break;
-                }
-
-                cout << table << endl;
-                cout << "Press 'R' to restock a product, or any other key to return.\n";
-
-                char action = _getch();
-                if (action != 'R' && action != 'r') {
-                    break;
-                }
-
-                while (true) {
-                    system("cls");
-                    cout << "\n============================================" << endl;
-                    cout << "|             Restock Product              |" << endl;
-                    cout << "============================================" << endl;
-                    string id = inputNonEmptyString(" - Enter product ID to restock: ");
-
-                    bool found = false;
-                    for (auto& product : products) {
-                        if (product.id == id) {
-                            found = true;
-                            cout << " - Product: " << product.name << " (Current Qty: " << product.quantity << ")\n";
-
-                            int qty;
-                            while (true) {
-                                cout << " - Enter quantity to add: ";
-                                string input;
-                                getline(cin, input);
-                                try {
-                                    qty = stoi(input);
-                                    if (qty <= 0) {
-                                        cout << " ‼️ Invalid quantity! Must be positive.\n";
-                                        continue;
-                                    }
-                                    break;
-                                } catch (...) {
-                                    cout << " ‼️ Invalid input! Please enter a valid integer.\n";
-                                }
-                            }
-
-                            product.quantity += qty;
-                            product.totalPrice = product.sellPrice * product.quantity;
-                            product.status = (product.quantity > 0) ? "Available" : "Unavailable";
-
-                            restockLogs.emplace_back(product.id, product.name, qty, getCurrentDate());
-                            saveProducts();
-                            saveRestockLogs();
-
-                            cout << " ✅ Product " << product.name << " restocked successfully! New Qty: " << product.quantity << endl;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        cout << " ❌ Product ID not found!\n";
-                    }
-
-                    string continueChoice;
-                    while (true) {
-                        cout << " - Restock another product? (y/n): ";
-                        getline(cin, continueChoice);
-                        if (continueChoice == "y" || continueChoice == "Y") {
-                            cout << "\n";
-                            break;
-                        } else if (continueChoice == "n" || continueChoice == "N") {
-                            presskeyEnter();
-                            break; // Exit restock loop
-                        } else {
-                            cout << " ‼️ Invalid input! Please enter 'y' or 'n'.\n";
-                        }
-                    }
-                    if (continueChoice == "n" || continueChoice == "N") break;
-                }
+            case 0: { 
+                showUnavailableProducts();
                 break;
             }
-
             case 1: { 
-                system("cls");
-                cout << "\n============================================" << endl;
-                cout << "|             Restock Product              |" << endl;
-                cout << "============================================" << endl;
-
-                while (true) {
-                    string id = inputNonEmptyString(" - Enter product ID to restock (or press Enter to cancel): ");
-                    if (id.empty()) {
-                        cout << " 🔂 Restocking cancelled.\n";
-                        presskeyEnter();
-                        break;
-                    }
-
-                    bool found = false;
-                    for (auto& product : products) {
-                        if (product.id == id) {
-                            found = true;
-                            cout << " - Product: " << product.name << " (Current Qty: " << product.quantity << ")\n";
-
-                            int qty;
-                            while (true) {
-                                cout << " - Enter quantity to add: ";
-                                string input;
-                                getline(cin, input);
-                                try {
-                                    qty = stoi(input);
-                                    if (qty <= 0) {
-                                        cout << " ‼️ Invalid quantity! Must be positive.\n";
-                                        continue;
-                                    }
-                                    break;
-                                } catch (...) {
-                                    cout << " ‼️ Invalid input! Please enter a valid integer.\n";
-                                }
-                            }
-
-                            product.quantity += qty;
-                            product.totalPrice = product.sellPrice * product.quantity;
-                            product.status = (product.quantity > 0) ? "Available" : "Unavailable";
-
-                            restockLogs.emplace_back(product.id, product.name, qty, getCurrentDate());
-                            saveProducts();
-                            saveRestockLogs();
-
-                            cout << " ✅ Product " << product.name << " restocked successfully! New Qty: " << product.quantity << endl;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        cout << " ❌ Product ID not found!\n";
-                    }
-
-                    string continueChoice;
-                    while (true) {
-                        cout << " - Restock another product? (y/n): ";
-                        getline(cin, continueChoice);
-                        if (continueChoice == "y" || continueChoice == "Y") {
-                            cout << "\n";
-                            system("cls");
-                            cout << "\n============================================" << endl;
-                            cout << "|             Restock Product              |" << endl;
-                            cout << "============================================" << endl;
-                            break;
-                        } else if (continueChoice == "n" || continueChoice == "N") {
-                            presskeyEnter();
-                            break; 
-                        } else {
-                            cout << " ‼️ Invalid input! Please enter 'y' or 'n'.\n";
-                        }
-                    }
-                    if (continueChoice == "n" || continueChoice == "N") break;
-                }
+                restockProductById();
                 break;
             }
-
             case 2: { 
-                system("cls");
-                cout << "\n============================================" << endl;
-                cout << "|             Restock Log                 |" << endl;
-                cout << "============================================" << endl;
-
-                if (restockLogs.empty()) {
-                    cout << " ❌ No restock logs!\n";
-                    presskeyEnter();
-                    break;
-                }
-
-                Table table;
-                table.add_row({"ProductID", "ProductName", "QtyRestocked", "RestockDate"});
-                table[0].format().font_style({FontStyle::bold});
-
-                for (const auto& log : restockLogs) {
-                    table.add_row({
-                        log.productId,
-                        log.productName,
-                        to_string(log.quantityRestocked),
-                        log.restockDate
-                    });
-                }
-
-                cout << table << endl;
-                presskeyEnter();
+                showRestockLogs();
                 break;
             }
-
             case 3: 
                 return;
 
@@ -2444,8 +2280,6 @@ void ProductManagementSystem::placeOrder() {
             if (key == 72) choice = (choice - 1 + MENU_SIZE) % MENU_SIZE;  
             else if (key == 80) choice = (choice + 1) % MENU_SIZE;         
         } else if (key == 13) {
-            //system("cls");
-
             switch (choice) {
                 case 0: addtoCart(order); break;
                 case 1: viewCarts(order); break;
@@ -2477,7 +2311,7 @@ void ProductManagementSystem::addtoCart(Order& order) {
         }
 
         while (!query.empty() && query.length() < 3) {
-            cout << "   ‼️ Input must be at least 3 characters long! Please try again.\n";
+            cout << "  ‼️ Input must be at least 3 characters long! Please try again.\n";
             cout << " - Enter product ID or name (or press Enter to cancel): ";
             getline(cin, query);
             if (query.empty()) {
@@ -2845,7 +2679,7 @@ void ProductManagementSystem::updateCart(Order& order) {
                 cout << "============================================" << endl;
                 break;
             } else if (continueChoice == "n" || continueChoice == "N") {
-                presskeyEnter();
+                //presskeyEnter();
                 return;
             } else {
                 cout << " ‼️ Invalid input! Please enter 'y' or 'n'.\n";
@@ -2930,9 +2764,53 @@ void ProductManagementSystem::confirmCart(Order& order) {
         saveProducts();
         saveOrders();
 
-        cout << " ✅ Order placed successfully!\n";
-        cout << " 🛒 Order ID: " << order.orderId << "\n";
-        cout << " 🕰️ Time: " << order.dateTime << "\n";
+        // Print receipt to console
+        cout << "\n========================================================================" << endl;
+        cout << "|                                Receipt                               |" << endl;
+        cout << "========================================================================" << endl;
+        cout << "🛒 Order ID: " << order.orderId << "\n";
+        cout << "👤 Customer: " << order.customerName << "\n";
+        cout << "🕰️ Time: " << order.dateTime << "\n";
+        cout << "📋 Products:\n";
+        cout << table << endl;
+        cout << "💰 Total: $" << fixed << setprecision(2) << order.total << "\n";
+        cout << " ========================================================================" << endl;
+        cout << " ✅ Thank you for your purchase!\n";
+        cout << "========================================================================" << endl;
+
+        // Save receipt to file
+        string filename = "receipt_" + order.orderId + ".txt";
+        ofstream outFile(filename);
+        if (outFile.is_open()) {
+            outFile << "========================================================================\n";
+            outFile << "|                                 Receipt                              |\n";
+            outFile << "========================================================================\n";
+            outFile << "Order ID: " << order.orderId << "\n";
+            outFile << "Customer: " << order.customerName << "\n";
+            outFile << "Time: " << order.dateTime << "\n";
+            outFile << "Products:\n";
+            outFile << table << "\n";
+            outFile << "Total: $" << fixed << setprecision(2) << order.total << "\n";
+            outFile << "========================================================================\n";
+            outFile << "Thank you for your purchase!\n";
+            outFile << "========================================================================\n";
+            outFile.close();
+            cout << " 📄 Receipt saved to " << filename << "\n";
+            cout << " 🗑️ Receipt will be deleted in 2 minutes.\n";
+
+            // delete the file after 2 minutes
+            thread([filename]() {
+                this_thread::sleep_for(chrono::minutes(2));
+                try {
+                    if (filesystem::exists(filename)) {
+                        filesystem::remove(filename);
+                    }
+                } catch (const filesystem::filesystem_error& e) {
+                }
+            }).detach();
+        } else {
+            cout << " ⚠️ Failed to save receipt to file.\n";
+        }
 
         order.products.clear();
         order.total = 0.0;
@@ -2943,7 +2821,6 @@ void ProductManagementSystem::confirmCart(Order& order) {
         cout << " ❌ Order confirmation cancelled.\n";
     }
 
-    presskeyEnter();
 }
 
 void ProductManagementSystem::displayOrderDetails(Order& order) {
@@ -2986,125 +2863,347 @@ void ProductManagementSystem::displayOrderDetails(Order& order) {
 
     system("cls");
 }
+// void ProductManagementSystem::viewStaffOrders() {
+//     if (orders.empty()) {
+//         cout << "\n  ‼️ No orders have been placed yet.\n";
+//         presskeyEnter();
+//         return;
+//     }
 
+//     vector<Order> sortedOrders = orders;
+//     sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
+//         return a.total > b.total;
+//     });
+
+//     const int pageSize = 5;
+//     int totalPages = (sortedOrders.size() + pageSize - 1) / pageSize;
+//     int currentPage = 1;
+
+//     while (true) {
+//         system("cls");
+//         cout << "\n============ STAFF ORDERS (Page " << currentPage << " of " << totalPages << ") ============\n";
+
+//         Table table;
+//         table.add_row({"No", "Order ID", "Customer Name", "Total ($)", "Date"});
+//         table[0].format().font_style({FontStyle::bold});
+
+//         size_t start = (currentPage - 1) * pageSize;
+//         size_t end = min(start + pageSize, sortedOrders.size());
+
+//         for (size_t i = start; i < end; ++i) {
+//             const auto& order = sortedOrders[i];
+
+//             ostringstream totalStream;
+//             totalStream << fixed << setprecision(2) << order.total;
+
+//             table.add_row({
+//                 to_string(i + 1),
+//                 order.orderId,
+//                 order.customerName,
+//                 totalStream.str(),
+//                 order.dateTime.empty() ? "N/A" : order.dateTime
+//             });
+//         }
+
+//         table.format().font_align(FontAlign::center).padding_left(1).padding_right(1);
+//         cout << table << endl;
+//         cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
+//         cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
+//         cout << " - Enter No or Order ID to view details : ";
+
+//         string input;
+//         getline(cin, input);
+
+//         if (!input.empty()) {
+//             try {
+//                 size_t orderIndex = stoul(input) - 1; 
+//                 if (orderIndex < sortedOrders.size()) {
+//                     displayOrderDetails(sortedOrders[orderIndex]);
+//                     continue;
+//                 } else {
+//                     cout << " ‼️ Invalid order number! Please try again.\n";
+//                     presskeyEnter();
+//                     continue;
+//                 }
+//             } catch (const invalid_argument&) {
+//                 auto it = find_if(sortedOrders.begin(), sortedOrders.end(),
+//                     [&input](const Order& order) { return order.orderId == input; });
+//                 if (it != sortedOrders.end()) {
+//                     displayOrderDetails(*it);
+//                     continue; 
+//                 } else {
+//                     cout << " ‼️ Order ID not found! Please try again.\n";
+//                     presskeyEnter();
+//                     continue;
+//                 }
+//             }
+//         }
+
+//         int ch = _getch();
+//         if (ch == 27) { 
+//             break;
+//         } else if (ch == 0 || ch == 224) {
+//             int arrow = _getch();
+//             if (arrow == 75 && currentPage > 1) { 
+//                 currentPage--;
+//             } else if (arrow == 77 && currentPage < totalPages) { 
+//                 currentPage++;
+//             }
+//         }
+//     }
+// }
+
+
+void ProductManagementSystem::displayOrderTable(const vector<Order>& orders, int currentPage, const string& title) {
+    const int pageSize = 5;
+    int totalPages = (orders.size() + pageSize - 1) / pageSize;
+
+    system("cls");
+    cout << "\n============ " << title << " (Page " << currentPage << " of " << totalPages << ") ============\n";
+
+    Table table;
+    table.add_row({"No", "Order ID", "Customer Name", "Total ($)", "Date"});
+    table[0].format().font_style({FontStyle::bold});
+
+    size_t start = (currentPage - 1) * pageSize;
+    size_t end = min(start + pageSize, orders.size());
+
+    for (size_t i = start; i < end; ++i) {
+        ostringstream totalStream;
+        totalStream << fixed << setprecision(2) << orders[i].total;
+        table.add_row({
+            to_string(i + 1),
+            orders[i].orderId,
+            orders[i].customerName,
+            totalStream.str(),
+            orders[i].dateTime.empty() ? "N/A" : orders[i].dateTime
+        });
+    }
+
+    table.format().font_align(FontAlign::center).padding_left(1).padding_right(1);
+    cout << table << endl;
+    cout << "📕 Page [" << currentPage << " of " << totalPages << "]\n";
+    cout << "[➡️ ] Next | [⬅️ ] Previous | [ESC] Back\n";
+}
 
 void ProductManagementSystem::viewStaffOrders() {
     if (orders.empty()) {
         cout << "\n  ‼️ No orders have been placed yet.\n";
-        cout << "Press Enter to return to menu...";
-        cin.ignore();
-        cin.get();
+        presskeyEnter();
         return;
     }
 
-    try {
-        vector<Order> sortedOrders = orders;
-        sort(sortedOrders.begin(), sortedOrders.end(),
-             [](const Order& a, const Order& b) {
-                 return a.total > b.total;
-             });
+    time_t now = time(0);
+    tm localTime;
+    localtime_s(&localTime, &now);
+    stringstream dateStream;
+    dateStream << put_time(&localTime, "%d %b %Y");
+    string today = dateStream.str(); 
 
-        const int pageSize = 5; 
-        int totalPages = (sortedOrders.size() + pageSize - 1) / pageSize;
-        int currentPage = 1;
+    vector<Order> sortedOrders = orders;
+    sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
+        return a.total > b.total;
+    });
 
-        while (true) {
-            system(CLEAR_SCREEN);
-            cout << "\n============ STAFF ORDERS (Page " << currentPage << " of " << totalPages << ") ============\n";
+    const vector<string> menuOptions = {
+        "1️⃣  Order Inventory Summary",
+        "2️⃣  View All Orders",
+        "3️⃣  View Orders by Day",
+        "4️⃣  View Order Details by No or Order ID"
+    };
+    int selectedOption = 0;
 
-            Table table;
-            table.add_row({"No", "Order ID", "Customer Name", "Total ($)", "Date"});
-            table[0].format().font_style({FontStyle::bold});
+    while (true) {
+        system("cls");
+        cout << "\n============== STAFF ORDER MENU ==============\n";
+        for (size_t i = 0; i < menuOptions.size(); ++i) {
+            cout << (i == selectedOption ? "👉 " : "   ") << " " << menuOptions[i] << "\n";
+        }
+        cout << "==============================================\n";
+        cout << "↕️  Use arrow key to navigate and [ESC] Return\n";
 
-            size_t start = (currentPage - 1) * pageSize;
-            size_t end = min(start + pageSize, sortedOrders.size());
-
-            for (size_t i = start; i < end; ++i) {
-                const auto& order = sortedOrders[i];
-                if (order.orderId.empty() || order.customerName.empty()) {
-                    throw runtime_error("Invalid order data at index " + to_string(i));
-                }
-
-                ostringstream totalStream;
-                totalStream << fixed << setprecision(2) << order.total;
-
-                table.add_row({
-                    to_string(i - start + 1),  
-                    order.orderId,
-                    order.customerName,
-                    totalStream.str(),
-                    order.dateTime.empty() ? "N/A" : order.dateTime
-                });
+        int ch = _getch();
+        if (ch == 0 || ch == 224) {
+            int arrow = _getch();
+            if (arrow == 72) { 
+                selectedOption = (selectedOption == 0) ? menuOptions.size() - 1 : selectedOption - 1;
+            } else if (arrow == 80) { 
+                selectedOption = (selectedOption + 1) % menuOptions.size();
             }
+        } else if (ch == 13) { 
+            switch (selectedOption) {
+                case 0: { 
+                    system("cls");
+                    cout << "\n============ ORDER INVENTORY SUMMARY (" << today << ") =============\n";
 
-            table.format()
-                .font_align(FontAlign::center)
-                .padding_left(1)
-                .padding_right(1);
+                    map<string, pair<int, double>> inventory; 
+                    map<string, double> profitMap; 
+                    double finalTotal = 0.0, totalProfit = 0.0;
+                    int totalQty = 0;
 
-            cout << table << endl;
+                    bool hasValidItems = false;
+                    for (const auto& order : orders) {
+                        if (!order.dateTime.empty() && order.dateTime.find(today) != string::npos) {
+                            for (const auto& item : order.products) {
+                                const auto& product = item.first;
+                                int quantity = item.second;
+                                if (quantity <= 0) continue; 
 
-            cout << "\nOptions: [n]ext, [p]revious, [q]uit";
-            cout << "\nEnter No. (1–" << (end - start) << ") or Order ID to view details: ";
+                                double sellPrice = product.sellPrice;
+                                double costPrice = product.costPrice >= 0 ? product.costPrice : 0.5 * sellPrice; 
+                                if (sellPrice < 0) continue; 
 
-            string input;
-            getline(cin, input);
+                                double revenue = quantity * sellPrice;
+                                double profit = quantity * (sellPrice - costPrice);
 
-            if (input == "q" || input == "Q") {
-                break;
-            } else if (input == "n" || input == "N") {
-                if (currentPage < totalPages) {
-                    ++currentPage;
-                } else {
-                    cout << "\n  ‼️ Already on the last page.\nPress Enter to continue...";
-                    cin.get();
+                                inventory[product.name].first += quantity;
+                                inventory[product.name].second += revenue;
+                                profitMap[product.name] += profit;
+                                totalQty += quantity;
+                                finalTotal += revenue;
+                                totalProfit += profit;
+                                hasValidItems = true;
+                            }
+                        }
+                    }
+
+                    if (!hasValidItems) {
+                        cout << "\n  ‼️ No valid orders found for " << today << ".\n";
+                    } else {
+                        Table summaryTable;
+                        summaryTable.add_row({"Item Name", "Quantity", "Total ($)", "Profit ($)"});
+                        summaryTable[0].format().font_style({FontStyle::bold});
+
+                        for (const auto& entry : inventory) {
+                            ostringstream totalStream, profitStream;
+                            totalStream << fixed << setprecision(2) << entry.second.second;
+                            profitStream << fixed << setprecision(2) << profitMap[entry.first];
+                            summaryTable.add_row({
+                                entry.first,
+                                to_string(entry.second.first),
+                                totalStream.str(),
+                                profitStream.str()
+                            });
+                        }
+
+                        summaryTable.format().font_align(FontAlign::center).padding_left(1).padding_right(1);
+                        cout << summaryTable << endl;
+                        cout << left << setw(14) << " - Total Items" << ": " << inventory.size() << endl;
+                        cout << setw(14) << " - Total Qty" << ": " << totalQty << endl;
+                        cout << setw(14) << " - Final Total" << ": $" << fixed << setprecision(2) << finalTotal << endl;
+                        cout << setw(14) << " - Total Profit" << ": $" << fixed << setprecision(2) << totalProfit << endl;
+                    }
+                    presskeyEnter();
+                    break;
                 }
-                continue;
-            } else if (input == "p" || input == "P") {
-                if (currentPage > 1) {
-                    --currentPage;
-                } else {
-                    cout << "\n  ‼️ Already on the first page.\nPress Enter to continue...";
-                    cin.get();
+                case 1: { 
+                    int currentPage = 1;
+                    while (true) {
+                        displayOrderTable(sortedOrders, currentPage, "ALL ORDERS");
+                        int key = _getch();
+                        if (key == 27) break; 
+                        if (key == 0 || key == 224) {
+                            int arrow = _getch();
+                            int totalPages = (sortedOrders.size() + 4) / 5;
+                            if (arrow == 75 && currentPage > 1) currentPage--; 
+                            else if (arrow == 77 && currentPage < totalPages) currentPage++; 
+                        }
+                    }
+                    break;
                 }
-                continue;
-            }
+                case 2: { 
+                    system("cls");
+                    cout << "\n============ VIEW ORDERS BY DAY =============\n";
+                    cout << " - Enter date (DD MM YYYY): ";
+                    string dateInput;
+                    getline(cin, dateInput);
 
-            bool found = false;
-            Order selectedOrder("", "");
+                    int day, month, year;
+                    stringstream ss(dateInput);
+                    if (ss >> day >> month >> year && day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2000) {
+                        stringstream dateStream;
+                        std::tm tm_date = {};
+                        tm_date.tm_mday = 1;
+                        tm_date.tm_mon = month - 1;
+                        tm_date.tm_year = year - 1900;
+                        dateStream << setfill('0') << setw(2) << day << " "
+                                   << std::put_time(&tm_date, "%b") << " "
+                                   << year;
+                        string targetDate = dateStream.str();
 
-            try {
-                size_t choice = stoul(input);
-                size_t index = start + choice - 1;
-                if (choice >= 1 && index < end) {
-                    selectedOrder = sortedOrders[index];
-                    found = true;
+                        vector<Order> dayOrders;
+                        for (const auto& order : sortedOrders) {
+                            if (!order.dateTime.empty() && order.dateTime.substr(4, 11) == targetDate) {
+                                dayOrders.push_back(order);
+                            }
+                        }
+
+                        if (dayOrders.empty()) {
+                            cout << "\n  ‼️ No orders found for " << targetDate << ".\n";
+                            cout << "Press Enter to continue...";
+                            presskeyEnter();
+                            break;
+                        }
+
+                        int currentPage = 1;
+                        while (true) {
+                            displayOrderTable(dayOrders, currentPage, "ORDERS FOR " + targetDate);
+                            int key = _getch();
+                            if (key == 27) break; 
+                            if (key == 0 || key == 224) {
+                                int arrow = _getch();
+                                int totalPages = (dayOrders.size() + 4) / 5;
+                                if (arrow == 75 && currentPage > 1) currentPage--;
+                                else if (arrow == 77 && currentPage < totalPages) currentPage++; 
+                            }
+                        }
+                    } else {
+                        cout << "\n  ‼️ Invalid date format! Use DD MM YYYY (12 06 2025).\n";
+                        cout << "Press Enter to continue...";
+                        presskeyEnter();
+                    }
+                    break;
                 }
-            } catch (...) {
-                for (const auto& order : sortedOrders) {
-                    if (order.orderId == input) {
-                        selectedOrder = order;
-                        found = true;
+                case 3: { 
+                    system("cls");
+                    cout << "\n============ VIEW ORDER DETAILS =============\n";
+                    cout << " - Enter order number or Order ID: ";
+                    string input;
+                    getline(cin, input);
+
+                    if (input.empty()) {
+                        cout << "\n  ‼️ Input cannot be empty.\n";
+                        cout << "Press Enter to continue...";
+                        presskeyEnter();
                         break;
                     }
+
+                    try {
+                        size_t index = stoul(input) - 1;
+                        if (index < sortedOrders.size()) {
+                            displayOrderDetails(sortedOrders[index]);
+                        } else {
+                            cout << "\n  ‼️ Order number out of range (1-" << sortedOrders.size() << ").\n";
+                            cout << "Press Enter to continue...";
+                            presskeyEnter();
+                        }
+                    } catch (const invalid_argument&) {
+                        auto it = find_if(sortedOrders.begin(), sortedOrders.end(),
+                            [&input](const Order& o) { return o.orderId == input; });
+                        if (it != sortedOrders.end()) {
+                            displayOrderDetails(*it);
+                        } else {
+                            cout << "\n  ‼️ Order ID '" << input << "' not found.\n";
+                            cout << "Press Enter to continue...";
+                            presskeyEnter();
+                        }
+                    }
+                    break;
                 }
             }
-
-            if (found) {
-                displayOrderDetails(selectedOrder);
-                cout << "\nPress Enter to return to order list...";
-                cin.get();
-            } else {
-                cout << "\n  ‼️ Invalid Order No. or ID.\nPress Enter to try again...";
-                cin.get();
-            }
+        } else if (ch == 27) { 
+            break;
         }
-
-    } catch (const exception& e) {
-        system(CLEAR_SCREEN);
-        cout << "\nError: " << e.what() << endl;
-        cout << "Press Enter to continue...";
-        cin.get();
     }
 }
 
@@ -3118,7 +3217,6 @@ void ProductManagementSystem::generateReport() {
         "🅾️   Back to Admin Dashboard"
     };
     const int optionCount = sizeof(options) / sizeof(options[0]);
-    
     int selected = 0;
 
     while (true) {
@@ -3145,74 +3243,12 @@ void ProductManagementSystem::generateReport() {
             switch (selected) {
 
                 case 0: {
-                    double totalBaseValue = 0, totalSellValue = 0;
-                    int totalQuantity = 0, lowStock = 0, unavailable = 0;
-                    const Product* mostStocked = nullptr;
-                    const Product* highestPriced = nullptr;
-                    time_t now = time(0);
-                    tm* localTime = localtime(&now);
-                    char dateStr[100];
-                    strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", localTime);
-
-                    for (const auto& product : products) {
-                        totalBaseValue += product.basePrice * product.quantity;
-                        totalSellValue += product.totalPrice;
-                        totalQuantity += product.quantity;
-                        if (product.quantity < 10) lowStock++;
-                        if (product.quantity == 0) unavailable++;
-                        if (!mostStocked || product.quantity > mostStocked->quantity)
-                            mostStocked = &product;
-                        if (!highestPriced || product.sellPrice > highestPriced->sellPrice)
-                            highestPriced = &product;
-                    }
-
-                    cout << "\n=============== INVENTORY SUMMARY =================\n";
-                    cout << "- Date.............................: " << dateStr << endl;
-                    cout << "- Total Products..................: " << products.size() << endl;
-                    cout << "- Total Stock Quantity............: " << totalQuantity << endl;
-                    cout << "- Total Base Value................: $" << fixed << setprecision(2) << totalBaseValue << endl;
-                    cout << "- Total Sell Value................: $" << totalSellValue << endl;
-                    cout << "- Low Stock Items.................: " << lowStock << endl;
-                    cout << "- Unavailable Items...............: " << unavailable << endl;
-                    cout << "- Most Stocked Product............: " << (mostStocked ? mostStocked->name : "None") << endl;
-                    cout << "- Highest Priced Product..........: " << (highestPriced ? highestPriced->name : "None") << endl;
-                    cout << "===================================================\n";
-
-                    cout << "▶️  Press [S] to save inventory or press Enter to return: ";
-                    string input;
-                    getline(cin, input);
-
-                    if (input == "S" || input == "s") {
-                        ofstream outFile("inventory_summary.txt");
-                        if (outFile.is_open()) {
-                            outFile << "=============== INVENTORY SUMMARY =================\n";
-                            outFile << "- Date.............................: " << dateStr << "\n";
-                            outFile << "- Total Products..................: " << products.size() << "\n";
-                            outFile << "- Total Stock Quantity............: " << totalQuantity << "\n";
-                            outFile << "- Total Base Value................: $" << fixed << setprecision(2) << totalBaseValue << "\n";
-                            outFile << "- Total Sell Value................: $" << totalSellValue << "\n";
-                            outFile << "- Low Stock Items.................: " << lowStock << "\n";
-                            outFile << "- Unavailable Items...............: " << unavailable << "\n";
-                            outFile << "- Most Stocked Product............: " << (mostStocked ? mostStocked->name : "None") << "\n";
-                            outFile << "- Highest Priced Product..........: " << (highestPriced ? highestPriced->name : "None") << "\n";
-                            outFile << "===================================================\n";
-                            outFile.close();
-                            cout << " ✅  Summary saved to 'inventory_summary.txt'\n";
-                        } else {
-                            cout << "   ⚠️  Error: Could not write to file.\n";
-                        }
-
-                        cout << "Press Enter to return...";
-                        cin.get(); 
-                    } else {
-                        cout << "🔄️  Returning...\n";
-                    }
-
+                    system("cls");
+                    generateInventorySummary();
                     break;
                 }
                 case 1: 
                 viewLowStockProducts(); 
-                system("pause"); 
                 break;
                 case 2: {
                     cout << endl;
@@ -3221,18 +3257,15 @@ void ProductManagementSystem::generateReport() {
                     break;
                 }
                 case 3: exportProductReport(); 
-                system("pause"); 
                 break;
                 case 4: 
                 exportDataToCsv(); 
-                system("pause");
                 break;
                 case 5: return; 
             }
         }
     }
 }
-
 void ProductManagementSystem::exportToCsv(){
      ofstream file("products_export.csv");
                 file << "ID,Name,Category,BasePrice,SellPrice,Quantity,Expiration,CreationDate,TotalPrice,Status,Size\n";
@@ -3337,7 +3370,6 @@ void ProductManagementSystem::exportProductReport() {
     }
 }
 
-
 void ProductManagementSystem::exportDataToCsv() {
     ofstream productFile("products_report.csv");
     productFile << "ID,Name,Category,BasePrice,SellPrice,Quantity,Expiration,CreationDate,TotalPrice,Status,Size\n";
@@ -3422,3 +3454,254 @@ void ProductManagementSystem::exportDataToCsv() {
     cout << "- orders_report.csv\n";
     cout << "- restock_report.csv\n";
 }
+
+void ProductManagementSystem::generateInventorySummary() {
+    double totalBaseValue = 0, totalSellValue = 0;
+    int totalQuantity = 0, lowStock = 0, unavailable = 0;
+    int highStockThreshold = 100;
+    vector<string> highStockItems;
+
+    const Product* mostStocked = nullptr;
+    const Product* highestPriced = nullptr;
+
+    time_t now = time(0);
+    tm* localTime = localtime(&now);
+    char dateStr[100];
+    strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", localTime);
+
+    for (const auto& product : products) {
+        totalBaseValue += product.basePrice * product.quantity;
+        totalSellValue += product.totalPrice;
+        totalQuantity += product.quantity;
+
+        if (product.quantity < 10) lowStock++;
+        if (product.quantity == 0) unavailable++;
+        if (product.quantity >= highStockThreshold)
+            highStockItems.push_back(product.name);
+
+        if (!mostStocked || product.quantity > mostStocked->quantity)
+            mostStocked = &product;
+
+        if (!highestPriced || product.sellPrice > highestPriced->sellPrice)
+            highestPriced = &product;
+    }
+
+    cout << "\n=============== INVENTORY SUMMARY =================\n";
+    cout << "- Date.............................: " << dateStr << endl;
+    cout << "- Total Categories.................: " << categories.size() << endl;
+    cout << "- Total Products...................: " << products.size() << endl;
+    cout << "- Total Stock Quantity.............: " << totalQuantity << endl;
+    cout << "- Total Base Value.................: $" << fixed << setprecision(2) << totalBaseValue << endl;
+    cout << "- Total Sell Value.................: $" << totalSellValue << endl;
+    cout << "- Low Stock Items (<10)............: " << lowStock << endl;
+    cout << "- Unavailable Items (0 qty)........: " << unavailable << endl;
+    cout << "- Most Stocked Product.............: " << (mostStocked ? mostStocked->name : "None") << endl;
+    cout << "- Highest Priced Product...........: " << (highestPriced ? highestPriced->name : "None") << endl;
+    cout << "- High Stock Items (≥" << highStockThreshold << ").....: "
+         << (highStockItems.empty() ? "None" : "") << endl;
+    for (const auto& item : highStockItems)
+        cout << "  • " << item << endl;
+    cout << "===================================================\n";
+
+    cout << "▶️  Press [S] to save inventory or press Enter to return: ";
+    string input;
+    getline(cin, input);
+
+    if (input == "S" || input == "s") {
+        ofstream outFile("inventory_summary.txt");
+        if (outFile.is_open()) {
+            outFile << "=============== INVENTORY SUMMARY =================\n";
+            outFile << "- Date.............................: " << dateStr << "\n";
+            outFile << "- Total Categories.................: " << categories.size() << "\n";
+            outFile << "- Total Products...................: " << products.size() << "\n";
+            outFile << "- Total Stock Quantity.............: " << totalQuantity << "\n";
+            outFile << "- Total Base Value.................: $" << fixed << setprecision(2) << totalBaseValue << "\n";
+            outFile << "- Total Sell Value.................: $" << totalSellValue << "\n";
+            outFile << "- Low Stock Items (<10)............: " << lowStock << "\n";
+            outFile << "- Unavailable Items (0 qty)........: " << unavailable << "\n";
+            outFile << "- Most Stocked Product.............: " << (mostStocked ? mostStocked->name : "None") << "\n";
+            outFile << "- Highest Priced Product...........: " << (highestPriced ? highestPriced->name : "None") << "\n";
+            outFile << "- High Stock Items (≥" << highStockThreshold << ").....: "
+                    << (highStockItems.empty() ? "None" : "") << "\n";
+            for (const auto& item : highStockItems)
+                outFile << "  • " << item << "\n";
+            outFile << "===================================================\n";
+            outFile.close();
+            cout << " ✅  Summary saved to 'inventory_summary.txt'\n";
+        } else {
+            cout << " ⚠️  Error: Could not write to file.\n";
+        }
+        cout << "Press Enter to return...";
+        cin.get();
+    } else {
+        cout << "🔄️  Returning...\n";
+    }
+}
+
+void ProductManagementSystem::showUnavailableProducts() {
+    system("cls");
+    cout << "\n============================================" << endl;
+    cout << "|          Unavailable Products            |" << endl;
+    cout << "============================================" << endl;
+
+    Table table;
+    table.add_row({"No", "ID", "Name", "Size", "Category", "Qty", "Status"});
+    table[0].format().font_style({FontStyle::bold});
+
+    int count = 1;
+    bool hasUnavailable = false;
+
+    for (const auto& product : products) {
+        if (product.quantity == 0) {
+            hasUnavailable = true;
+            string categoryName = "Unknown";
+            string displaySize = product.size.empty() ? "N/A" : product.size;
+
+            for (const auto& category : categories) {
+                if (category.uuid == product.categoryUuid) {
+                    categoryName = category.name;
+                    break;
+                }
+            }
+
+            table.add_row({
+                to_string(count++),
+                product.id,
+                product.name,
+                displaySize,
+                categoryName,
+                to_string(product.quantity),
+                product.status
+            });
+        }
+    }
+
+    if (!hasUnavailable) {
+        cout << " ❌ No unavailable products!\n";
+        presskeyEnter();
+        return;
+    }
+
+    cout << table << endl;
+    cout << "Press 'R' to restock a product, or any other key to return.\n";
+
+    char action = _getch();
+    if (action == 'R' || action == 'r') {
+        while (true) {
+            restockProductById();
+            string continueChoice;
+            cout << " - Restock another product? (y/n): ";
+            getline(cin, continueChoice);
+            if (continueChoice == "n" || continueChoice == "N") {
+                presskeyEnter();
+                break;
+            } else if (continueChoice != "y" && continueChoice != "Y") {
+                cout << " ‼️ Invalid input! Please enter 'y' or 'n'.\n";
+            }
+        }
+    }
+}
+
+void ProductManagementSystem::restockProductById() {
+    system("cls");
+    cout << "\n============================================" << endl;
+    cout << "|             Restock Product              |" << endl;
+    cout << "============================================" << endl;
+
+    string id = inputNonEmptyString(" - Enter product ID to restock: ");
+
+    for (auto& product : products) {
+        if (product.id == id) {
+            cout << " - Product: " << product.name << " (" << product.quantity << ")\n";
+
+            int qty;
+            while (true) {
+                cout << " - Enter quantity to add: ";
+                string input;
+                getline(cin, input);
+                try {
+                    qty = stoi(input);
+                    if (qty <= 0) {
+                        cout << " ‼️ Invalid quantity! Must be positive.\n";
+                        continue;
+                    }
+                    break;
+                } catch (...) {
+                    cout << " ‼️ Invalid input! Please enter a valid integer.\n";
+                }
+            }
+
+            product.quantity += qty;
+            product.totalPrice = product.sellPrice * product.quantity;
+            product.status = (product.quantity > 0) ? "Available" : "Unavailable";
+
+            restockLogs.emplace_back(product.id, product.name, qty, getCurrentDate());
+            saveProducts();
+            saveRestockLogs();
+
+            cout << " ✅ Product " << product.name << " restocked successfully! New Qty: " << product.quantity << endl;
+            return;
+        }
+    }
+
+    cout << " ❌ Product ID not found!\n";
+}
+
+void ProductManagementSystem::showRestockLogs(int pageSize) {
+    system("cls");
+    cout << "\n============================================" << endl;
+    cout << "|             Restock Log                 |" << endl;
+    cout << "============================================" << endl;
+
+    if (restockLogs.empty()) {
+        cout << " ❌ No restock logs!\n";
+        presskeyEnter();
+        return;
+    }
+
+    int totalLogs = restockLogs.size();
+    int totalPages = (totalLogs + pageSize - 1) / pageSize;
+    int currentPage = 1;
+
+    while (true) {
+        system("cls");
+        cout << "\n============================================" << endl;
+        cout << "|             Restock Log                 |" << endl;
+        cout << "============================================" << endl;
+
+        Table table;
+        table.add_row({"ProductID", "ProductName", "QtyRestocked", "RestockDate"});
+        table[0].format().font_style({FontStyle::bold});
+
+        int startIdx = (currentPage - 1) * pageSize;
+        int endIdx = std::min(startIdx + pageSize, totalLogs);
+
+        for (int i = startIdx; i < endIdx; ++i) {
+            const auto& log = restockLogs[i];
+            table.add_row({
+                log.productId,
+                log.productName,
+                to_string(log.quantityRestocked),
+                log.restockDate
+            });
+        }
+
+        cout << table << endl;
+        cout << "📕  Page [" << currentPage << " of " << totalPages << "]\n";
+        cout << "[➡️  ] Next | [⬅️  ] Previous | [ESC] Quit Page\n";
+
+        int ch = _getch();
+
+        if (ch == 27) { 
+            break;
+        } else if (ch == 0 || ch == 224) {
+            int arrow = _getch();
+            if (arrow == 75 && currentPage > 1) { 
+                currentPage--;
+            } else if (arrow == 77 && currentPage < totalPages) { 
+                currentPage++;
+            }
+        }
+    }
+}
+

@@ -92,7 +92,7 @@ private:
     void addCategory();
     void updateCategory();
     void deleteCategory();
-    void viewAllCategories();
+    void viewAllCategories(int pageSize = 5);
 
     // Export methods
     void exportToCsv();
@@ -112,6 +112,12 @@ private:
     void confirmCart(Order& order);
 
     void displayOrderDetails(Order& order);
+    void generateInventorySummary();
+    void showUnavailableProducts();
+    void restockProductById();
+    void showRestockLogs(int pageSize = 5);
+
+    void displayOrderTable(const std::vector<Order>& orders, int currentPage, const std::string& title);
 
 public:
     ProductManagementSystem();
