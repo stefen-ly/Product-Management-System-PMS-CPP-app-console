@@ -807,7 +807,9 @@ void ProductManagementSystem::viewAllUsers() {
         return;
     }
 
-    cout << "👨‍💼  User List... " <<endl;
+    cout << "+------------------------------------+" <<endl;
+    cout << "|           🧑‍💻  User List            |" <<endl;
+    cout << "+------------------------------------+" <<endl;
     Table table;
     table.add_row({"No", "Username", "Passwords", "Role"});
 
@@ -978,8 +980,10 @@ void ProductManagementSystem::viewAllCategories(int pageSize) {
     while (true) {
         system("cls");
 
-        cout << "📋 Category List...\n";
-
+        cout << "\n";
+        cout << "+------------------------------------+" <<endl;
+        cout << "|         📋 Category List           |" <<endl;
+        cout << "+------------------------------------+" <<endl;
         Table table;
         table.add_row({"No", "UUID", "Name"});
         table[0].format().font_style({FontStyle::bold});
@@ -1253,7 +1257,9 @@ void ProductManagementSystem::viewAllProducts(int pageSize) {
 
     while (true) {
         system("cls"); 
-        cout << " 🛒 Product List \n";
+        cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
+        cout << "|                                                     🛒 Product List                                                         |\n";
+        cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
 
         Table table;
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
@@ -1361,6 +1367,10 @@ void ProductManagementSystem::productByCategory() {
 
     while (true) {
         system("cls");
+        cout << "\n";
+        cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
+        cout << "|                                                     🛒 Product List                                                          |\n";
+        cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
         cout << " 🛒 Products in Category: " << selectedCategoryName <<"\n";
 
         Table table;
@@ -1891,8 +1901,9 @@ void ProductManagementSystem::viewLowStockProducts() {
 
     while (browsing) {
         system("cls");
-        cout << "\n========== LOW STOCK PRODUCTS ==========\n";
-
+        cout << "+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
+        cout << "|                                                   💹 LOW STOCK PRODUCTS                                                    |\n";
+        cout << "+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
         Table table;
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
                        "Created", "Expiry", "TotalPrice", "Status"});
@@ -2018,6 +2029,9 @@ void ProductManagementSystem::sortProductsMenu() {
 
             while (true) {
                 system("cls");
+                cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
+                cout << "|                                                     💹 SORT PRODUCTS                                                         |\n";
+                cout << "+------------------------------------------------------------------------------------------------------------------------------+" <<endl;
                 Table table;
                 table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty", 
                                "Created", "Expiry",  "TotalPrice", "Status"});
@@ -2824,8 +2838,10 @@ void ProductManagementSystem::confirmCart(Order& order) {
 }
 
 void ProductManagementSystem::displayOrderDetails(Order& order) {
-
-    cout << "\n============== ORDER DETAILS ==============\n";
+    
+    cout << "+-------------------------------------------------+" <<endl;
+    cout << "|                   ORDER DETAILS                 |\n";
+    cout << "+-------------------------------------------------+" <<endl;
     cout << "Order ID      : " << order.orderId << endl;
     cout << "Customer Name : " << order.customerName << endl;
 
@@ -2959,7 +2975,9 @@ void ProductManagementSystem::displayOrderTable(const vector<Order>& orders, int
     int totalPages = (orders.size() + pageSize - 1) / pageSize;
 
     system("cls");
-    cout << "\n============ " << title << " (Page " << currentPage << " of " << totalPages << ") ============\n";
+    cout << "+-----------------------------------------------------------------------+" <<endl;
+    cout << "|                      " << title << " (Page " << currentPage << " of " << totalPages << ")             |\n";
+    cout << "+-----------------------------------------------------------------------+" <<endl;
 
     Table table;
     table.add_row({"No", "Order ID", "Customer Name", "Total ($)", "Date"});
@@ -3034,6 +3052,7 @@ void ProductManagementSystem::viewStaffOrders() {
             switch (selectedOption) {
                 case 0: { 
                     system("cls");
+
                     cout << "\n============ ORDER INVENTORY SUMMARY (" << today << ") =============\n";
 
                     map<string, pair<int, double>> inventory; 
@@ -3166,7 +3185,9 @@ void ProductManagementSystem::viewStaffOrders() {
                 }
                 case 3: { 
                     system("cls");
-                    cout << "\n============ VIEW ORDER DETAILS =============\n";
+                    cout << "+=================================================+" <<endl;
+                    cout << "|               VIEW ORDER DETAILS                |\n";
+                    cout << "+=================================================+" <<endl;
                     cout << " - Enter order number or Order ID: ";
                     string input;
                     getline(cin, input);

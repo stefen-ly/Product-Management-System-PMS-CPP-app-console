@@ -49,7 +49,7 @@ string getCurrentDate() {
     string month = (ltm.tm_mon < 9 ? "0" : "") + to_string(1 + ltm.tm_mon);
     string day = (ltm.tm_mday < 10 ? "0" : "") + to_string(ltm.tm_mday);
     
-    return day + "-" + month + "-" + year;
+    return day + " " + month + " " + year;
 }
 
 bool isValidDateFormat(const string& date) {
