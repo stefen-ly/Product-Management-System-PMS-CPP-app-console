@@ -148,9 +148,16 @@ Staff:
 
 ---
 
+## 👨‍🏫 Instructure
+
+- Leature: Kay Koe
+
+---
+
 ## 👨‍💻 Author
 
-- Developed by [Your Name]
+- Developed by team 1
+- Team Leader: Thouen Vanly
 - Foundation Year Student, ISTAD
 
 ---
