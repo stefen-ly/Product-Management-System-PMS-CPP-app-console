@@ -22,6 +22,14 @@
 #define CLEAR_SCREEN "clear"
 #endif
 
+#define RESET   "\033[0m"
+#define BOLD    "\033[1m"
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+#define CYAN    "\033[36m"
+#define BLUE    "\033[34m"
+
 using namespace std;
 using namespace tabulate;
 
@@ -60,6 +68,7 @@ string getHiddenInput(const string& prompt) {
     return input;
 }
 
+
 void ProductManagementSystem::mainMenu() {
     int selected = 0;
     const int options = 3;
@@ -71,6 +80,8 @@ void ProductManagementSystem::mainMenu() {
 
     while (true) {
         system("cls"); 
+
+        printLogo();
         cout << "+============================================+\n";
         cout << "|          PRODUCT MANAGEMENT SYSTEM         |\n";
         cout << "+============================================+\n";
@@ -458,8 +469,6 @@ void ProductManagementSystem::loadOrders() {
     file.close();
 }
 
-
-
 void ProductManagementSystem::loadRestockLogs() {
     ifstream file(RESTOCK_LOG_FILE);
     if (!file.is_open()) return;
@@ -571,7 +580,6 @@ void ProductManagementSystem::saveOrders() {
 
     file.close();
 }
-
 
 void ProductManagementSystem::saveRestockLogs() {
     ofstream file(RESTOCK_LOG_FILE);
@@ -1215,6 +1223,7 @@ void ProductManagementSystem::addNewProduct() {
             return;
         }
 
+        system("cls");
         cout << " 📋  Available Categories:\n";
         cout << "+-------------------------------------+\n";
         for (size_t i = 0; i < categories.size(); ++i) {
@@ -1291,8 +1300,8 @@ void ProductManagementSystem::viewAllProducts(int pageSize) {
         return;
     }
 
-    size_t totalPages = (products.size() + pageSize - 1) / pageSize; 
-    size_t currentPage = 0;
+    int totalPages = (products.size() + pageSize - 1) / pageSize; 
+    int currentPage = 1;
 
     while (true) {
         system("cls"); 
@@ -1304,11 +1313,11 @@ void ProductManagementSystem::viewAllProducts(int pageSize) {
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
                        "Created", "Expiry", "TotalPrice", "Status"});
 
-        size_t start = currentPage * pageSize;
-        size_t end = min(start + pageSize, products.size());
+        int start = (currentPage - 1) * pageSize;
+        int end = min(start + pageSize, static_cast<int>(products.size()));
         int count = start + 1; 
 
-        for (size_t i = start; i < end; ++i) {
+        for (int i = start; i < end; ++i) {
             const auto& product = products[i];
             string categoryName = getCategoryName(product.categoryUuid); 
             string displaySize = product.size.empty() ? "N/A" : product.size;
@@ -1343,23 +1352,16 @@ void ProductManagementSystem::viewAllProducts(int pageSize) {
         if (key == 224) { 
             key = _getch();
             if (key == 75) { 
-                if (currentPage > 0) currentPage--;
-                else {
-                    cout << "\nAlready on the first page!\n";
-                }
-            } else if (key == 77) {
-                if (currentPage < totalPages - 1) currentPage++;
-                else {
-                    cout << "\nAlready on the last page!\n";
-                }
+                if (currentPage > 1) currentPage--;
+            } else if (key == 77) { 
+                if (currentPage < totalPages) currentPage++;
             }
         } else if (key == 27) {
             break;
-        } else {
-            cout << "\n‼️  Invalid key! Use ←, →, or ESC.\n";
         }
     }
 }
+
 
 void ProductManagementSystem::productByCategory() {
     if (categories.empty()) {
@@ -1401,8 +1403,8 @@ void ProductManagementSystem::productByCategory() {
     }
 
     const int pageSize = 5;
-    size_t totalPages = (filteredProducts.size() + pageSize - 1) / pageSize;
-    size_t currentPage = 0;
+    int totalPages = (filteredProducts.size() + pageSize - 1) / pageSize;
+    int currentPage = 1;
 
     while (true) {
         system("cls");
@@ -1416,11 +1418,11 @@ void ProductManagementSystem::productByCategory() {
         table.add_row({"No", "ID", "Name", "Category", "Size", "BasePrice", "SellPrice", "Qty",
                        "Created", "Expiry", "TotalPrice", "Status"});
 
-        size_t start = currentPage * pageSize;
-        size_t end = min(start + pageSize, filteredProducts.size());
+        int start = (currentPage - 1) * pageSize;
+        int end = min(start + pageSize, static_cast<int>(filteredProducts.size()));
         int count = start + 1;
 
-        for (size_t i = start; i < end; ++i) {
+        for (int i = start; i < end; ++i) {
             const auto& product = filteredProducts[i];
             string displaySize = product.size.empty() ? "N/A" : product.size;
 
@@ -1454,21 +1456,13 @@ void ProductManagementSystem::productByCategory() {
         int key = _getch();
         if (key == 224) {
             key = _getch();
-            if (key == 75) { 
-                if (currentPage > 0) currentPage--;
-                else {
-                    cout << "\nAlready on the first page!\n";
-                }
-            } else if (key == 77) { 
-                if (currentPage < totalPages - 1) currentPage++;
-                else {
-                    cout << "\nAlready on the last page!\n";
-                }
+            if (key == 75 && currentPage > 1) {
+                currentPage--;
+            } else if (key == 77 && currentPage < totalPages) {
+                currentPage++;
             }
         } else if (key == 27) { 
             break;
-        } else {
-            cout << "\nInvalid key! Use ←, →, or ESC.\n";
         }
     }
 }

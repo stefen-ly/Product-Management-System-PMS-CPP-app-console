@@ -4,6 +4,10 @@
 #include <regex>
 #include <iostream>  
 #include <sstream>
+#include <fstream>
+#define NOMINMAX
+#include <windows.h>
+#include <limits>
 
 using namespace std;
 
@@ -93,6 +97,10 @@ string inputExpireDate() {
         cout << " - Enter expiration date (DD-MM-YYYY): ";
         getline(cin, expiration);
 
+        if (expiration.empty()) {
+            return ""; 
+        }
+
         if (!isValidDateFormat(expiration)) {
             cout << "‼️  Invalid date format. Please enter date in DD-MM-YYYY format.\n";
             continue;
@@ -112,8 +120,9 @@ string inputExpireDate() {
             continue;
         }
 
-        break; 
+        break;
     }
+
     return expiration;
 }
 
@@ -248,4 +257,16 @@ string toLower(const string& str) {
     string result = str;
     transform(result.begin(), result.end(), result.begin(), ::tolower);
     return result;
+}
+
+void printLogo() {
+      HANDLE consoleColor = GetStdHandle(STD_OUTPUT_HANDLE);
+      fstream file("logo.txt");  
+      string line;
+          
+      while (getline(file, line)) {
+          SetConsoleTextAttribute(consoleColor, 4);
+          cout << right << "\t\t" << line << endl;  
+          Sleep(120);
+      }
 }
