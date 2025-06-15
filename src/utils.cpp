@@ -248,11 +248,6 @@ int inputPositiveInt(const string& prompt) {
     }
 }
 
-string maskPassword(const string& password) {
-    if (password.length() <= 2) return password;
-    return string(password.length() - 2, '*') + password.substr(password.length() - 2);
-}
-
 string toLower(const string& str) {
     string result = str;
     transform(result.begin(), result.end(), result.begin(), ::tolower);
@@ -269,4 +264,22 @@ void printLogo() {
           cout << right << "\t\t" << line << endl;  
           Sleep(120);
       }
+}
+
+string inputWithCancel(const string& promptMessage, const string& currentValue) {
+    cout << promptMessage << " (current: " << currentValue << ", or press Enter to cancel): ";
+    string input;
+    getline(cin, input);
+    return input;
+}
+
+string inputWithCancel(const string& promptMessage) {
+    cout << promptMessage;
+    string input;
+    getline(cin, input);
+    return input; 
+}
+
+string maskPassword(const string& password) {
+    return string(password.length(), '*'); 
 }

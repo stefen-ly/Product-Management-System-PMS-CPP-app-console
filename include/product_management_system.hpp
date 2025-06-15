@@ -119,6 +119,14 @@ private:
 
     void displayOrderTable(const std::vector<Order>& orders, int currentPage, const std::string& title);
 
+    // Staff Order 
+    // void viewOrderInventorySummary();
+    // void viewAllOrders(std::vector<Order>& sortedOrders);
+    // void viewOrdersByDay(std::vector<Order>& sortedOrders);
+    // void viewOrderDetails(std::vector<Order>& sortedOrders);
+    // void deleteOrderByUUID();
+    //void displayOrderDetails(Order& order);
+
 public:
     ProductManagementSystem();
     void mainMenu();

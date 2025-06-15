@@ -17,3 +17,7 @@ std::string maskPassword(const std::string& password) ;
 std::string inputOptionalString(const std::string& prompt, int minLength = 3);
 std::string toLower(const std::string& str);
 void printLogo();
+std::string inputWithCancel(const std::string& promptMessage);
+std::string inputWithCancel(const std::string& promptMessage, const std::string& currentValue);
+std::string inputWithCancel(const std::string& prompt);
+std::string maskPassword(const std::string& password);
