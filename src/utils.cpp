@@ -5,6 +5,7 @@
 #include <iostream>  
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #define NOMINMAX
 #include <windows.h>
 #include <limits>
@@ -91,24 +92,54 @@ bool isDateAfterToday(int day, int month, int year) {
     return false;
 }
 
+// string inputExpireDate() {
+//     string expiration;
+//     while (true) {
+//         cout << " - Enter expiration date (DD-MM-YYYY): ";
+//         getline(cin, expiration);
+
+//         if (expiration.empty()) {
+//             return ""; 
+//         }
+
+//         if (!isValidDateFormat(expiration)) {
+//             cout << "‼️  Invalid date format. Please enter date in DD-MM-YYYY format.\n";
+//             continue;
+//         }
+
+//         int day = stoi(expiration.substr(0, 2));
+//         int month = stoi(expiration.substr(3, 2));
+//         int year = stoi(expiration.substr(6, 4));
+
+//         if (!isValidDayMonth(day, month, year)) {
+//             cout << "‼️  Invalid day/month combination. Please enter a valid date.\n";
+//             continue;
+//         }
+
+//         if (!isDateAfterToday(day, month, year)) {
+//             cout << "‼️  Expiration date must be after today's date.\n";
+//             continue;
+//         }
+
+//         break;
+//     }
+
+//     return expiration;
+// }
+
 string inputExpireDate() {
-    string expiration;
+    int day, month, year;
+    
     while (true) {
-        cout << " - Enter expiration date (DD-MM-YYYY): ";
-        getline(cin, expiration);
-
-        if (expiration.empty()) {
-            return ""; 
-        }
-
-        if (!isValidDateFormat(expiration)) {
-            cout << "‼️  Invalid date format. Please enter date in DD-MM-YYYY format.\n";
+        cout << " - Enter expiration date (DD MM YYYY): ";
+        if (!(cin >> day >> month >> year)) {
+            cout << "‼️  Invalid input. Please enter numbers for day, month, and year.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             continue;
         }
 
-        int day = stoi(expiration.substr(0, 2));
-        int month = stoi(expiration.substr(3, 2));
-        int year = stoi(expiration.substr(6, 4));
+        cin.ignore(); // remove leftover newline character from buffer
 
         if (!isValidDayMonth(day, month, year)) {
             cout << "‼️  Invalid day/month combination. Please enter a valid date.\n";
@@ -120,10 +151,14 @@ string inputExpireDate() {
             continue;
         }
 
-        break;
-    }
+        // Format the date as DD-MM-YYYY
+        ostringstream oss;
+        oss << setfill('0') << setw(2) << day << " "
+            << setw(2) << month << " "
+            << setw(4) << year;
 
-    return expiration;
+        return oss.str();
+    }
 }
 
 string inputNonEmptyString(const string& prompt) {

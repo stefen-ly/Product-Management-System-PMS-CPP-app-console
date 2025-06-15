@@ -2144,6 +2144,13 @@ void ProductManagementSystem::sortProductsMenu() {
 }
 
 void ProductManagementSystem::viewExpiredProducts() {
+    // ✅ Restrict access to Admin only
+    if (currentUser->role != "Admin") {
+        cout << "\n  ❌ Access denied. Only Admin can view expired products.\n";
+        presskeyEnter();
+        return;
+    }
+
     const int ITEMS_PER_PAGE = 10;
     const string options[3] = {
         "1️⃣   Delete Expired Product",
@@ -2171,9 +2178,9 @@ void ProductManagementSystem::viewExpiredProducts() {
 
     while (choosing) {
         system("cls");
-        cout << "\n+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
+        cout << "\n+----------------------------------------------------------------------------------------------------------------------------+" << endl;
         cout << "|                                                     EXPIRED PRODUCTS                                                       |\n";
-        cout << "+----------------------------------------------------------------------------------------------------------------------------+" <<endl;
+        cout << "+----------------------------------------------------------------------------------------------------------------------------+" << endl;
 
         Table table;
         table.add_row({"No", "ID", "Name", "Size", "Qty", "Created", "Expiry", "TotalPrice", "Status"});
@@ -2216,24 +2223,34 @@ void ProductManagementSystem::viewExpiredProducts() {
         if (key == 224) {
             key = _getch();
             switch (key) {
-                case 72: selected = (selected - 1 + 3) % 3; break; 
-                case 80: selected = (selected + 1) % 3; break;     
-                case 75: currentPage = (currentPage - 1 + totalPages) % totalPages; break; 
-                case 77: currentPage = (currentPage + 1) % totalPages; break;             
+                case 72: selected = (selected - 1 + 3) % 3; break; // Up
+                case 80: selected = (selected + 1) % 3; break;     // Down
+                case 75: currentPage = (currentPage - 1 + totalPages) % totalPages; break; // Left
+                case 77: currentPage = (currentPage + 1) % totalPages; break;             // Right
             }
         } else if (key == 13) {
             choosing = false;
         }
     }
 
-    if (selected == 0 && currentUser->role == "Admin") {
-        products.erase(
-            remove_if(products.begin(), products.end(),
-                [this](const Product& p) { return isExpired(p); }),
-            products.end());
-        saveProducts();
-        cout << "   ✅ Expired products deleted successfully!\n";
+    // ✅ Handle user selection
+    if (selected == 0) {
+        char confirm;
+        cout << "\n  ❓ Are you sure you want to delete all expired products? (y/n): ";
+        cin >> confirm;
+
+        if (confirm == 'y' || confirm == 'Y') {
+            products.erase(
+                remove_if(products.begin(), products.end(),
+                    [this](const Product& p) { return isExpired(p); }),
+                products.end());
+            saveProducts();
+            cout << "   ✅ Expired products deleted successfully!\n";
+        } else {
+            cout << "   ❎ Deletion cancelled.\n";
+        }
     } else if (selected == 1) {
+        // Export to CSV
         ofstream file("expired_products.csv");
         file << "ID,Name,Expiration,CreationDate,Quantity,TotalPrice,Status,Size\n";
         for (const auto& product : expiredProducts) {
@@ -2243,13 +2260,18 @@ void ProductManagementSystem::viewExpiredProducts() {
             replace(escapedSize.begin(), escapedSize.end(), ',', ';');
 
             file << "\"" << product.id << "\",\"" << escapedName << "\",\"" << product.expirationDate << "\",\""
-                 << product.creationDate << "\"," << product.quantity << ","
-                 << fixed << setprecision(2) << product.totalPrice << ",\"" << product.status << "\",\"" << escapedSize << "\"\n";
+                 << product.creationDate << "\"," << product.quantity << "," 
+                 << fixed << setprecision(2) << product.totalPrice << ",\"" 
+                 << product.status << "\",\"" << escapedSize << "\"\n";
         }
         file.close();
         cout << "   ✅ Expired products report exported to expired_products.csv\n";
     }
+
+    presskeyEnter(); // Pause before returning
 }
+
+
 
 void ProductManagementSystem::presskeyEnter(){
     cout << "Press Enter to countinue...";
