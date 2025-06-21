@@ -320,10 +320,13 @@ void ProductManagementSystem::loadUsers() {
 
 void ProductManagementSystem::loadProducts() {
     ifstream file(PRODUCT_FILE);
-    if (!file.is_open()) return;
+    if (!file.is_open()) {
+        cout << "Error: Could not open product file: " << PRODUCT_FILE << endl;
+        return;
+    }
     
     string line;
-    getline(file, line); 
+    getline(file, line); // Skip header
     
     while (getline(file, line)) {
         vector<string> fields = parseCsvLine(line);
@@ -334,44 +337,64 @@ void ProductManagementSystem::loadProducts() {
                 int quantity = stoi(fields[5]);
                 double totalPrice = stod(fields[8]);
                 string status = fields[9];
-                if (status != "Available" && status != "false") {
-                    status = (quantity > 0 ? "Available" : "false");
+                // Validate status against quantity
+                string calculatedStatus = (quantity == 0) ? "Unavailable" : 
+                                        (quantity <= 5 ? "Low Stock" : "Available");
+                if (status != "Available" && status != "Low Stock" && status != "Unavailable") {
+                    status = calculatedStatus;
+                    cout << "Warning: Invalid status for ID " << fields[0] << ", set to " << status << endl;
+                } else if (status != calculatedStatus) {
+                    cout << "Warning: Status mismatch for ID " << fields[0] << ", File: " << status << ", Expected: " << calculatedStatus << endl;
+                    status = calculatedStatus; // Ensure consistency with quantity
                 }
                 products.emplace_back(fields[0], fields[1], fields[2], basePrice, sellPrice, 
                                     quantity, fields[6], fields[7], totalPrice, status, fields[10]);
+                cout << "Loaded ID: " << fields[0] << ", Quantity: " << quantity << ", Status: " << status << endl;
             } else if (fields.size() >= 10) { 
                 double basePrice = stod(fields[3]);
                 double sellPrice = stod(fields[4]);
                 int quantity = stoi(fields[5]);
                 double totalPrice = stod(fields[8]);
                 string status = fields[9];
-                if (status != "Available" && status != "false") {
-                    status = (quantity > 0 ? "Available" : "false");
+                // Validate status against quantity
+                string calculatedStatus = (quantity == 0) ? "Unavailable" : 
+                                        (quantity <= 5 ? "Low Stock" : "Available");
+                if (status != "Available" && status != "Low Stock" && status != "Unavailable") {
+                    status = calculatedStatus;
+                    cout << "Warning: Invalid status for ID " << fields[0] << ", set to " << status << endl;
+                } else if (status != calculatedStatus) {
+                    cout << "Warning: Status mismatch for ID " << fields[0] << ", File: " << status << ", Expected: " << calculatedStatus << endl;
+                    status = calculatedStatus;
                 }
                 products.emplace_back(fields[0], fields[1], fields[2], basePrice, sellPrice, 
                                     quantity, fields[6], fields[7], totalPrice, status, "");
                 cout << "Warning: Converted product entry for ID " << fields[0] << " to include size (set to empty)\n";
+                cout << "Loaded ID: " << fields[0] << ", Quantity: " << quantity << ", Status: " << status << endl;
             } else if (fields.size() >= 7) { 
                 double basePrice = stod(fields[3]);
                 double sellPrice = stod(fields[4]);
                 int quantity = stoi(fields[5]);
                 double totalPrice = sellPrice * quantity;
-                string status = quantity > 0 ? "Available" : "";
+                string status = (quantity == 0) ? "Unavailable" : 
+                               (quantity <= 5 ? "Low Stock" : "Available");
                 string creationDate = "2025-01-01";
                 products.emplace_back(fields[0], fields[1], fields[2], basePrice, sellPrice, 
                                     quantity, fields[6], creationDate, totalPrice, status, "");
                 cout << "Warning: Converted product entry for ID " << fields[0] << " to include creationDate, totalPrice, status, size\n";
+                cout << "Loaded ID: " << fields[0] << ", Quantity: " << quantity << ", Status: " << status << endl;
             } else if (fields.size() >= 6) {
                 double price = stod(fields[3]);
                 int quantity = stoi(fields[4]);
                 double basePrice = price * 0.8;
                 double sellPrice = price;
                 double totalPrice = sellPrice * quantity;
-                string status = quantity > 0 ? "Available" : "";
+                string status = (quantity == 0) ? "Unavailable" : 
+                               (quantity <= 5 ? "Low Stock" : "Available");
                 string creationDate = "2025-01-01";
                 products.emplace_back(fields[0], fields[1], fields[2], basePrice, sellPrice, 
                                     quantity, fields[5], creationDate, totalPrice, status, "");
                 cout << "Warning: Converted older product entry for ID " << fields[0] << "\n";
+                cout << "Loaded ID: " << fields[0] << ", Quantity: " << quantity << ", Status: " << status << endl;
             } else {
                 cout << "Warning: Skipping malformed product line: " << line << endl;
             }
@@ -419,7 +442,7 @@ void ProductManagementSystem::loadOrders() {
     if (!file.is_open()) return;
 
     string line;
-    getline(file, line); // Skip header
+    getline(file, line);
 
     while (getline(file, line)) {
         vector<string> fields = parseCsvLine(line);
@@ -1529,7 +1552,7 @@ void ProductManagementSystem::viewProduct() {
         }
         cout << "=====================================\n";
         cout << "↕️  Use arrows to navigate";
-
+        
         int ch = _getch();
         if (ch == 224) {
             ch = _getch();
@@ -2144,7 +2167,6 @@ void ProductManagementSystem::sortProductsMenu() {
 }
 
 void ProductManagementSystem::viewExpiredProducts() {
-    // ✅ Restrict access to Admin only
     if (currentUser->role != "Admin") {
         cout << "\n  ❌ Access denied. Only Admin can view expired products.\n";
         presskeyEnter();
@@ -2233,7 +2255,6 @@ void ProductManagementSystem::viewExpiredProducts() {
         }
     }
 
-    // ✅ Handle user selection
     if (selected == 0) {
         char confirm;
         cout << "\n  ❓ Are you sure you want to delete all expired products? (y/n): ";
@@ -2250,7 +2271,7 @@ void ProductManagementSystem::viewExpiredProducts() {
             cout << "   ❎ Deletion cancelled.\n";
         }
     } else if (selected == 1) {
-        // Export to CSV
+        // ------------------Export to CSV------------------
         ofstream file("expired_products.csv");
         file << "ID,Name,Expiration,CreationDate,Quantity,TotalPrice,Status,Size\n";
         for (const auto& product : expiredProducts) {
@@ -2268,7 +2289,7 @@ void ProductManagementSystem::viewExpiredProducts() {
         cout << "   ✅ Expired products report exported to expired_products.csv\n";
     }
 
-    presskeyEnter(); // Pause before returning
+    presskeyEnter();
 }
 
 
@@ -2408,7 +2429,7 @@ void ProductManagementSystem::addtoCart(Order& order) {
 
         while (!query.empty() && query.length() < 3) {
             cout << "  ‼️ Input must be at least 3 characters long! Please try again.\n";
-            cout << " - Enter product ID or name (or press Enter to cancel): ";
+            cout << " - Enter product ID or name: ";
             getline(cin, query);
             if (query.empty()) {
                 cout << "   ❌ Cancelled adding product.\n";
@@ -2461,7 +2482,7 @@ void ProductManagementSystem::addtoCart(Order& order) {
             }
 
             cout << table << endl;
-            string id = inputNonEmptyString(" - Enter product ID to select (or press Enter to cancel): ");
+            string id = inputNonEmptyString(" - Enter product ID to select: ");
             if (id.empty()) {
                 cout << "   ❌ Cancelled adding product.\n";
                 break;
@@ -2503,8 +2524,11 @@ void ProductManagementSystem::addtoCart(Order& order) {
                 order.total += selectedProduct->sellPrice * qty;
                 selectedProduct->quantity -= qty;
                 selectedProduct->totalPrice = selectedProduct->sellPrice * selectedProduct->quantity;
-                selectedProduct->status = (selectedProduct->quantity > 0) ? "Available" : "Unavailable";
+                // Fixed status logic
+                selectedProduct->status = (selectedProduct->quantity == 0) ? "Unavailable" : 
+                                         (selectedProduct->quantity <= 5 ? "Low Stock" : "Available");
                 cout << "   ✅ Added " << selectedProduct->name << " x" << qty << " to cart.\n";
+                cout << "   Updated product ID: " << selectedProduct->id << ", Quantity: " << selectedProduct->quantity << ", Status: " << selectedProduct->status << endl;
             } else {
                 cout << "   ❌ Insufficient stock!\n";
             }
@@ -2526,24 +2550,6 @@ void ProductManagementSystem::addtoCart(Order& order) {
             } else {
                 cout << "   ‼️ Invalid input! Please enter 'y' or 'n'.\n";
             }
-        }
-    }
-
-    string continueChoice;
-    while (true) {
-        cout << " - Add another product to cart? (y/n): ";
-        getline(cin, continueChoice);
-        if (continueChoice == "y" || continueChoice == "Y") {
-            cout << "\n";
-            system("cls");
-            cout << "\n+==========================================+" << endl;
-            cout << "|            Add Product to Cart            |" << endl;
-            cout << "+==========================================+" << endl;
-            continue; 
-        } else if (continueChoice == "n" || continueChoice == "N") {
-            return; 
-        } else {
-            cout << "   ‼️ Invalid input! Please enter 'y' or 'n'.\n";
         }
     }
 }
@@ -2730,13 +2736,15 @@ void ProductManagementSystem::updateCart(Order& order) {
 
                                 product.quantity += stockChange;
                                 product.totalPrice = product.sellPrice * product.quantity;
-                                product.status = (product.quantity > 0) ? "Available" : "Unavailable";
+                                product.status = (product.quantity == 0) ? "Unavailable" : 
+                                                 (product.quantity <= 5 ? "Low Stock" : "Available");
 
                                 order.total -= item.first.sellPrice * item.second;
                                 item.second = newQty;
                                 order.total += item.first.sellPrice * newQty;
 
                                 cout << " ✅ Quantity updated to " << newQty << " for " << item.first.name << "\n";
+                                cout << "   Updated product ID: " << product.id << ", Quantity: " << product.quantity << ", Status: " << product.status << endl;
 
                                 if (newQty == 0) {
                                     order.products.erase(order.products.begin() + (itemNum - 1));
@@ -2751,7 +2759,9 @@ void ProductManagementSystem::updateCart(Order& order) {
                         if (product.id == item.first.id) {
                             product.quantity += item.second;
                             product.totalPrice = product.sellPrice * product.quantity;
-                            product.status = (product.quantity > 0) ? "Available" : "Unavailable";
+                            product.status = (product.quantity == 0) ? "Unavailable" : 
+                                             (product.quantity <= 5 ? "Low Stock" : "Available");
+                            cout << "   Updated product ID: " << product.id << ", Quantity: " << product.quantity << ", Status: " << product.status << endl;
                             break;
                         }
                     }
@@ -2775,7 +2785,6 @@ void ProductManagementSystem::updateCart(Order& order) {
                 cout << "============================================" << endl;
                 break;
             } else if (continueChoice == "n" || continueChoice == "N") {
-                //presskeyEnter();
                 return;
             } else {
                 cout << " ‼️ Invalid input! Please enter 'y' or 'n'.\n";
@@ -2860,7 +2869,7 @@ void ProductManagementSystem::confirmCart(Order& order) {
         saveProducts();
         saveOrders();
 
-        // Print receipt to console
+        //--------------- Print receipt to console--------------------
         cout << "\n+======================================================================+" << endl;
         cout << "|                                Receipt                               |" << endl;
         cout << "+======================================================================+" << endl;
@@ -2874,7 +2883,7 @@ void ProductManagementSystem::confirmCart(Order& order) {
         cout << "| ✅ Thank you for your purchase!\n"; 
         cout << "+======================================================================+" << endl;
 
-        // Save receipt to file
+        //-----------------Save receipt to file-----------------
         string filename = "receipt_" + order.orderId + ".txt";
         ofstream outFile(filename);
         if (outFile.is_open()) {
@@ -3052,9 +3061,10 @@ void ProductManagementSystem::viewStaffOrders() {
             cout << "+=================================================+" << endl;
             cout << " Date: " << today << "\n";
 
+            //---------------- using pair to pair calculate ----------------
             map<string, pair<int, double>> inventory; // name -> (qty, revenue)
-            map<string, double> profitMap;            // name -> profit
-            map<string, double> marginMap;            // name -> margin %
+            map<string, double> profitMap;            
+            map<string, double> marginMap;            
 
             double finalTotal = 0.0, totalProfit = 0.0;
             int totalQty = 0;
@@ -3209,7 +3219,6 @@ void ProductManagementSystem::viewStaffOrders() {
                         }
                     } else {
                         cout << "\n  ‼️ Invalid date format! Use DD MM YYYY (12 06 2025).\n";
-                        cout << "Press Enter to continue...";
                         presskeyEnter();
                     }
                     break;
@@ -3225,7 +3234,6 @@ void ProductManagementSystem::viewStaffOrders() {
 
                     if (input.empty()) {
                         cout << "\n  ‼️ Input cannot be empty.\n";
-                        cout << "Press Enter to continue...";
                         presskeyEnter();
                         break;
                     }
@@ -3236,7 +3244,6 @@ void ProductManagementSystem::viewStaffOrders() {
                             displayOrderDetails(sortedOrders[index]);
                         } else {
                             cout << "\n  ‼️ Order number out of range (1-" << sortedOrders.size() << ").\n";
-                            cout << "Press Enter to continue...";
                             presskeyEnter();
                         }
                     } catch (const invalid_argument&) {
@@ -3246,7 +3253,6 @@ void ProductManagementSystem::viewStaffOrders() {
                             displayOrderDetails(*it);
                         } else {
                             cout << "\n  ‼️ Order ID '" << input << "' not found.\n";
-                            cout << "Press Enter to continue...";
                             presskeyEnter();
                         }
                     }
@@ -3262,7 +3268,6 @@ void ProductManagementSystem::viewStaffOrders() {
                         string uuid = inputWithCancel(" - Enter Order UUID to delete: ");
                         if (uuid.empty()) {
                             cout << "\n 🔁 Deletion canceled.\n";
-                            //presskeyEnter();
                             break;
                         }
 

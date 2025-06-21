@@ -139,7 +139,7 @@ string inputExpireDate() {
             continue;
         }
 
-        cin.ignore(); // remove leftover newline character from buffer
+        cin.ignore();
 
         if (!isValidDayMonth(day, month, year)) {
             cout << "‼️  Invalid day/month combination. Please enter a valid date.\n";
